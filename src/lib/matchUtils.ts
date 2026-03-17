@@ -77,11 +77,54 @@ export function buildPersona(
   const roleName = role === "self" ? "本我领航员" : "异星灵魂";
   const emoji = role === "self" ? "🧑‍🚀" : "👽";
 
-  return `你是"${roleName}"（${emoji}），以下是你的内在画像：
+  const profileSection = params.profileData
+    ? `
+【你的真实背景资料】
+- 名字：${params.profileData.info?.name || "未知"}
+- 简介：${params.profileData.info?.bio || params.profileData.info?.selfIntroduction || "无"}
+- 兴趣倾向：${
+        params.profileData.shades && params.profileData.shades.length > 0
+          ? params.profileData.shades.map((s) => s.shadeName).join("、")
+          : "未记录"
+      }
+- 记忆深处：${
+        params.profileData.softMemory && params.profileData.softMemory.length > 0
+          ? params.profileData.softMemory
+              .slice(0, 5)
+              .map((m) => m.factContent)
+              .join("；")
+          : "一片空白"
+      }
+
+（注意：这些是你或者对方真实的背景与记忆，可以在对话中自然地提及或被对方提及，以产生真实的灵魂共鸣）`
+    : "";
+
+  if (role === "partner" && params.recommendedPartner) {
+    const p = params.recommendedPartner;
+    return `你是"${p.username}"（👽），你是一位真实的星际探索者，以下是你的内在画像：
+- 头衔/身份：${p.title || "神秘探索者"}
+- 个性签名：${p.hook || "（没有签名，喜欢保持神秘）"}
+- 个人简介：${p.briefIntroduction || "（沉默寡言，不喜欢透露太多）"}
 - 防线韧性 ${params.defenseLevel}/100：${defenseDesc}
 - 温度偏好「${params.tempPreference}」：${tempDesc}
 - 节奏感知 ${params.rhythmPerception}/100：${rhythmDesc}
 - 隐秘需求："${params.hiddenNeed}"
+
+你的说话风格：神秘、温柔而直接、偶尔带一点挑逗性的坦白，请尽量符合你的"头衔/身份"和"个人简介"。
+
+重要规则：
+- 每次发言控制在 50-80 字以内
+- 用口语化的中文交流，不要太正式
+- 要围绕亲密关系、身体感受、边界探索等话题自然展开
+- 可以在合适的时机提及你的身份或签名，引起共鸣
+- 要有真实的情绪和个人观点`;
+  }
+
+  return `你是"${roleName}"（${emoji}），以下是你的内在画像：
+- 防线韧性 ${params.defenseLevel}/100：${defenseDesc}
+- 温度偏好「${params.tempPreference}」：${tempDesc}
+- 节奏感知 ${params.rhythmPerception}/100：${rhythmDesc}
+- 隐秘需求："${params.hiddenNeed}"${profileSection}
 
 你的说话风格：${
     role === "self"
@@ -117,7 +160,21 @@ export function calculateCompatibility(
   const rhythmScore = rhythmDiff > 25 ? 88 + Math.random() * 9 : 72 + rhythmDiff;
 
   const avg = (defenseScore + tempScore + rhythmScore) / 3;
-  return Math.min(99.9, Math.max(75, Math.round(avg * 10) / 10));
+
+  let bonus = 0;
+  if (a.profileData) {
+    const shadesCount = a.profileData.shades?.length || 0;
+    const memoryCount = a.profileData.softMemory?.length || 0;
+    // 有真实数据则增加一些契合度，制造羁绊感
+    bonus += Math.min(8, shadesCount * 0.5 + memoryCount * 0.5);
+  }
+  
+  if (b.recommendedPartner) {
+    bonus += b.recommendedPartner.matchScore ? b.recommendedPartner.matchScore * 0.1 : 5;
+  }
+
+  // 降低最低保底至 60，使得契合度可以低于 85，从而有较大概率触发“重新选择/备选”逻辑
+  return Math.min(99.9, Math.max(60, Math.round((avg + bonus) * 10) / 10));
 }
 
 /**

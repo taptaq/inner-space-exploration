@@ -65,7 +65,8 @@ export type KnowledgeCategory =
   | "funfact";
 
 export interface KnowledgeCard {
-  id: string;
+  id: string; // The database auto-generated string ID
+  cardId: string; // The specific string identifier like 'psy-001'
   category: KnowledgeCategory;
   icon: string;
   title: string;
@@ -88,7 +89,7 @@ export const categoryLabels: Record<
 export const knowledgeCards: KnowledgeCard[] = [
   // ── 心理健康 ──
   {
-    id: "psy-001",
+    id: "1", cardId: "psy-001",
     category: "psychology",
     icon: "🧠",
     title: '什么是"安全词"？它为什么很重要？',
@@ -99,7 +100,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["安全词", "信任", "沟通"],
   },
   {
-    id: "psy-002",
+    id: "2", cardId: "psy-002",
     category: "psychology",
     icon: "🧠",
     title: "关于「性幻想」：比你想的更正常",
@@ -110,7 +111,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["性幻想", "心理健康", "正常化"],
   },
   {
-    id: "psy-003",
+    id: "3", cardId: "psy-003",
     category: "psychology",
     icon: "🧠",
     title: '亲密关系中的"心流状态"',
@@ -124,7 +125,7 @@ export const knowledgeCards: KnowledgeCard[] = [
 
   // ── 生理知识 ──
   {
-    id: "phy-001",
+    id: "4", cardId: "phy-001",
     category: "physiology",
     icon: "🫀",
     title: "你的身体其实是一架精密乐器",
@@ -136,7 +137,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["神经末梢", "触觉", "振动"],
   },
   {
-    id: "phy-002",
+    id: "5", cardId: "phy-002",
     category: "physiology",
     icon: "🫀",
     title: '催产素：不只是"爱情激素"',
@@ -148,7 +149,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["催产素", "激素", "拥抱"],
   },
   {
-    id: "phy-003",
+    id: "6", cardId: "phy-003",
     category: "physiology",
     icon: "🫀",
     title: "盆底肌：被严重低估的核心肌群",
@@ -162,7 +163,7 @@ export const knowledgeCards: KnowledgeCard[] = [
 
   // ── 安全指南 ──
   {
-    id: "saf-001",
+    id: "7", cardId: "saf-001",
     category: "safety",
     icon: "🛡️",
     title: "硅胶 vs 其他材质：选对材料保护自己",
@@ -174,7 +175,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["材质安全", "硅胶", "卫生"],
   },
   {
-    id: "saf-002",
+    id: "8", cardId: "saf-002",
     category: "safety",
     icon: "🛡️",
     title: "润滑剂的正确选择方法",
@@ -185,7 +186,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["润滑剂", "水基", "安全"],
   },
   {
-    id: "saf-003",
+    id: "9", cardId: "saf-003",
     category: "safety",
     icon: "🛡️",
     title: "清洁消毒：每次使用前后的必修课",
@@ -198,7 +199,7 @@ export const knowledgeCards: KnowledgeCard[] = [
 
   // ── 科学冷知识 ──
   {
-    id: "fun-001",
+    id: "10", cardId: "fun-001",
     category: "funfact",
     icon: "💡",
     title: '大脑是最大的"性器官"',
@@ -210,7 +211,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["大脑", "愉悦", "神经科学"],
   },
   {
-    id: "fun-002",
+    id: "11", cardId: "fun-002",
     category: "funfact",
     icon: "💡",
     title: '人类是唯一会"面对面"的灵长类动物',
@@ -221,7 +222,7 @@ export const knowledgeCards: KnowledgeCard[] = [
     tags: ["进化", "面对面", "社交"],
   },
   {
-    id: "fun-003",
+    id: "12", cardId: "fun-003",
     category: "funfact",
     icon: "💡",
     title: "气味比外貌更影响吸引力",

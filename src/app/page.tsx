@@ -2,12 +2,29 @@
 
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
+import LoginPage from "@/components/auth/LoginPage";
 
 export default function Home() {
   const [isRendered, setIsRendered] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     setIsRendered(true);
+    const token = localStorage.getItem("token");
+    const userStr = localStorage.getItem("user");
+    
+    setIsLoggedIn(!!token);
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (e) {
+        // silent catch
+      }
+    }
+    
+    setIsChecking(false);
   }, []);
 
   // 预生成背景流星与星轨游离碎片
@@ -23,6 +40,22 @@ export default function Home() {
       })),
     [],
   );
+
+  // 还在检查登录状态时显示空白，避免闪烁
+  if (isChecking) {
+    return (
+      <main className="min-h-screen bg-brand-slate-950 flex items-center justify-center">
+        <div className="relative w-8 h-8">
+          <div className="absolute inset-0 border-2 border-brand-cyan-500/20 rounded-full" />
+          <div className="absolute inset-0 border-2 border-t-brand-cyan-400 rounded-full animate-spin" />
+        </div>
+      </main>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return <LoginPage />;
+  }
 
   return (
     <main className="relative min-h-screen bg-brand-slate-950 font-mono overflow-hidden flex flex-col items-center justify-center text-center px-4">
@@ -152,6 +185,38 @@ export default function Home() {
             />
           </svg>
         </Link>
+
+        {/* 用户资料极简铭牌 (转移到医典下方) */}
+        {currentUser && (
+          <div className="mt-8 flex items-center gap-3 bg-brand-slate-900/60 border border-brand-slate-700/50 px-4 py-2 rounded-full backdrop-blur-md z-30 transition-all hover:bg-brand-slate-800/80 hover:border-brand-cyan-500/50 shadow-lg">
+            {currentUser.avatar ? (
+              <img src={currentUser.avatar} alt="Avatar" className="w-9 h-9 rounded-full border border-brand-slate-700 object-cover" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-brand-slate-800 border border-brand-slate-700 flex items-center justify-center">
+                <span className="text-brand-cyan-400 text-xs font-bold w-full text-center leading-[2rem]">?</span>
+              </div>
+            )}
+            <div className="flex flex-col pr-3">
+              <span className="text-brand-slate-200 text-xs font-bold tracking-wide">{currentUser.name || currentUser.email}</span>
+              <span className="text-brand-cyan-500 text-[9px] uppercase tracking-widest leading-none mt-1">已连接 SecondMe 主脑</span>
+            </div>
+            {/* 极小退出按钮 */}
+            <button
+              onClick={() => {
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+                window.location.reload();
+              }}
+              className="ml-2 w-6 h-6 rounded-full bg-brand-slate-800 hover:bg-brand-red-500/20 text-brand-slate-500 hover:text-brand-red-400 flex items-center justify-center transition-colors"
+              title="断开连接"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
+        )}
+
       </div>
 
       {/* 底部装饰工程参数 */}

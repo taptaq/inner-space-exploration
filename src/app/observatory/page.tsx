@@ -4,6 +4,8 @@ import * as React from "react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
+import { calculateCompatibility, generatePartnerParams } from "@/lib/matchUtils";
+import { RecommendedUser } from "@/types/agent";
 
 const LOG_MESSAGES = [
   { text: "系统鉴权(200): 本我领航员特征池冻结", delay: 1000 },
@@ -34,93 +36,169 @@ function TypewriterText({ text, speed = 30 }: { text: string; speed?: number }) 
 
 export default function ObservatoryPage() {
   const router = useRouter();
-  const getSerializedPayload = useAgentStore(
-    (state) => state.getSerializedPayload,
-  );
+  const getSerializedPayload = useAgentStore((state) => state.getSerializedPayload);
+  const setProfileData = useAgentStore((state) => state.setProfileData);
+  const setDiscoverUsers = useAgentStore((state) => state.setDiscoverUsers);
+  const setBestMatchUser = useAgentStore((state) => state.setBestMatchUser);
+  const setBestMatchScore = useAgentStore((state) => state.setBestMatchScore);
+
   const [logs, setLogs] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(true);
   const [phase, setPhase] = useState(0);
 
-  // 引入 50% 随机数决定命运，也可以通过自身的防御防线高低来影响成功率
-  const [isMatchSuccess] = useState(() => Math.random() > 0.5);
+  // 依赖真实的匹配结果而不是概率
+  const [isMatchSuccess, setIsMatchSuccess] = useState<boolean | null>(null);
 
   useEffect(() => {
     let activeTimeouts: NodeJS.Timeout[] = [];
+    const token = localStorage.getItem("token");
 
-    // 根据匹配结果动态组合日志队列
-    let dynamicLogs = [
-      { text: "系统鉴权(200): 本我领航员特征池冻结", delay: 1000 },
-      { text: "深空网桥(): 构建 3D 引力雷达网阵列...", delay: 2000 },
-      { text: "引力扫描(): 发现大量游离节点，启动逐一接触寻迹协议", delay: 3500 },
-      {
-        text: "节点博弈(0x1A): 防线撕裂度过高... 匹配失败，已震荡排斥",
-        delay: 5000,
-      },
-      {
-        text: "节点博弈(0x2B): 共振频率严重干涉... 匹配失败，已震荡排斥",
-        delay: 7500,
-      },
-    ];
+    const runMatching = async () => {
+      let myProfile = null;
+      let discoverList: RecommendedUser[] = [];
 
-    if (isMatchSuccess) {
-      dynamicLogs.push(
-        { text: "引力坍缩(): 发现同频极高契合目标 0x9F3E_SEC !", delay: 10000 },
-        { text: "共振锁定(): 基因序列握手成功，建立引力羁绊链路", delay: 11500 },
-        {
-          text: "系统输出(): 引力坍缩完成，生成《双生愉悦装备 BOM 通用图纸》",
-          delay: 13500,
-        }
-      );
-    } else {
-      dynamicLogs.push(
-        { text: "节点博弈(0x3C): 星轨极性不合... 匹配失败", delay: 10000 },
-        { text: "深空网桥(): 引力网节点耗尽... 没有任何异星灵魂产生共鸣", delay: 11500 },
-        {
-          text: "单人独立判定(WARN): 转为单机协议，生成《专属内太空基建蓝图》",
-          delay: 13500,
-        }
-      );
-    }
-
-    // 日志推演时序
-    dynamicLogs.forEach(({ text, delay }) => {
-      activeTimeouts.push(
-        setTimeout(() => {
-          setLogs((prev) => [
-            ...prev,
-            `[${new Date().toISOString().split("T")[1].slice(0, 12)}] // ${text}`,
+      // 1. 发起并发网络请求
+      if (token) {
+        try {
+          const [profileRes, discoverRes] = await Promise.all([
+            fetch("/api/user/profile", { headers: { Authorization: `Bearer ${token}` } }),
+            fetch("/api/user/discover", { headers: { Authorization: `Bearer ${token}` } })
           ]);
-        }, delay),
-      );
-    });
+          
+          const profileData = await profileRes.json();
+          const discoverData = await discoverRes.json();
+          
+          if (!profileData.error) {
+            myProfile = profileData;
+            setProfileData(profileData);
+          }
+          if (discoverData.users && Array.isArray(discoverData.users)) {
+            discoverList = discoverData.users;
+            setDiscoverUsers(discoverList);
+          }
+        } catch (err) {
+          console.error("Failed to fetch match data:", err);
+        }
+      }
 
-    // 视觉动画博弈阶段推演
-    activeTimeouts.push(setTimeout(() => setPhase(1), 2000)); // 雷达升起
-    activeTimeouts.push(setTimeout(() => setPhase(2), 4000)); // 移动向 Mismatch 1
-    activeTimeouts.push(setTimeout(() => setPhase(2.5), 5200)); // 排斥 Mismatch 1
-    activeTimeouts.push(setTimeout(() => setPhase(3), 6500)); // 移动向 Mismatch 2
-    activeTimeouts.push(setTimeout(() => setPhase(3.5), 7800)); // 排斥 Mismatch 2
-    
-    if (isMatchSuccess) {
-      activeTimeouts.push(setTimeout(() => setPhase(4), 9000)); // 移动向 Target
-      activeTimeouts.push(setTimeout(() => setPhase(5), 11000)); // Target 变绿连线
-    } else {
-      activeTimeouts.push(setTimeout(() => setPhase(-1), 9000)); // 孤星退回核心发抖发冷
-      activeTimeouts.push(setTimeout(() => setPhase(-2), 11000)); // 全盘暗场
-    }
+      // 2. 将本我参数与所有推荐用户计算契合度，找出最匹配的人
+      const myPayload = getSerializedPayload();
+      myPayload.profileData = myProfile;
 
-    // 动画序列结束，执行判定路由跳转
-    const finalTimer = setTimeout(() => {
-      setIsProcessing(false);
-      router.push(isMatchSuccess ? "/blueprint" : "/blueprint-solo");
-    }, 15000);
+      // 在进入测算动画流之前，无缝调用保存接口落盘个人档案集到数据库中
+      if (token) {
+        try {
+          // 这里也不等 await，放进后台异步存储
+          fetch("/api/user/save-profile", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              defenseLevel: myPayload.defenseLevel,
+              tempPreference: myPayload.tempPreference,
+              rhythmPerception: myPayload.rhythmPerception,
+              hiddenNeed: myPayload.hiddenNeed,
+              profileData: myPayload.profileData
+            })
+          }).catch(e => console.error("Auto-save profile payload failed:", e));
+        } catch (e) {
+          // Silent catch
+        }
+      }
 
-    activeTimeouts.push(finalTimer);
+      let bestScore = 0;
+      let bestMatch: RecommendedUser | null = null;
+
+      if (discoverList.length > 0) {
+        discoverList.forEach(user => {
+          // 为了复用 existing 的打分逻辑，此处我们需要包装一个虚拟的 partner param
+          const tempPartner = generatePartnerParams(myPayload);
+          tempPartner.recommendedPartner = user;
+          
+          const score = calculateCompatibility(myPayload, tempPartner);
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = user;
+          }
+        });
+      } else {
+        // 如果没有拉取到（如未登录或没数据），退化为随机兜底
+        bestScore = calculateCompatibility(myPayload, generatePartnerParams(myPayload));
+      }
+
+      setBestMatchScore(bestScore);
+      setBestMatchUser(bestMatch);
+      
+      const success = bestScore >= 85;
+      setIsMatchSuccess(success);
+
+      // 3. 根据结果安排动画时序排期排布日志
+      scheduleAnimations(success, activeTimeouts);
+    };
+
+    const scheduleAnimations = (success: boolean, timeouts: NodeJS.Timeout[]) => {
+      // 动画与日志时序逻辑与原来几乎相同，只是 success 变成了确定的布尔值
+      let dynamicLogs = [
+        { text: "系统鉴权(200): 本我领航员特征池冻结", delay: 1000 },
+        { text: "深空网桥(): 构建 3D 引力雷达网阵列...", delay: 2000 },
+        { text: "引力扫描(): 发现大量游离节点，启动逐一接触寻迹协议", delay: 3500 },
+        { text: "节点博弈(0x1A): 防线撕裂度过高... 匹配失败，已震荡排斥", delay: 5000 },
+        { text: "节点博弈(0x2B): 共振频率严重干涉... 匹配失败，已震荡排斥", delay: 7500 },
+      ];
+
+      if (success) {
+        dynamicLogs.push(
+          { text: "引力坍缩(): 发现同频极高契合目标 0x9F3E_SEC !", delay: 10000 },
+          { text: "共振锁定(): 基因序列握手成功，建立引力羁绊链路", delay: 11500 },
+          { text: "系统输出(): 引力坍缩完成，生成《双生愉悦装备 BOM 通用图纸》", delay: 13500 }
+        );
+      } else {
+        dynamicLogs.push(
+          { text: "节点博弈(0x3C): 星轨极性不合... 匹配失败", delay: 10000 },
+          { text: "深空网桥(): 没有任何异星灵魂形成高频共鸣", delay: 11500 },
+          { text: "单人独立判定(WARN): 转为单机协议，生成《专属内太空基建蓝图》", delay: 13500 }
+        );
+      }
+
+      dynamicLogs.forEach(({ text, delay }) => {
+        timeouts.push(
+          setTimeout(() => {
+            setLogs((prev) => [
+              ...prev,
+              `[${new Date().toISOString().split("T")[1].slice(0, 12)}] // ${text}`,
+            ]);
+          }, delay)
+        );
+      });
+
+      timeouts.push(setTimeout(() => setPhase(1), 2000));
+      timeouts.push(setTimeout(() => setPhase(2), 4000));
+      timeouts.push(setTimeout(() => setPhase(2.5), 5200));
+      timeouts.push(setTimeout(() => setPhase(3), 6500));
+      timeouts.push(setTimeout(() => setPhase(3.5), 7800));
+      
+      if (success) {
+        timeouts.push(setTimeout(() => setPhase(4), 9000));
+        timeouts.push(setTimeout(() => setPhase(5), 11000));
+      } else {
+        timeouts.push(setTimeout(() => setPhase(-1), 9000));
+        timeouts.push(setTimeout(() => setPhase(-2), 11000));
+      }
+
+      timeouts.push(setTimeout(() => {
+        setIsProcessing(false);
+        router.push(success ? "/blueprint" : "/blueprint-solo");
+      }, 15000));
+    };
+
+    runMatching();
 
     return () => {
       activeTimeouts.forEach(clearTimeout);
     };
-  }, [router]);
+  }, [router, getSerializedPayload, setProfileData, setDiscoverUsers, setBestMatchUser, setBestMatchScore]);
 
   // 随机性数据计算
   const randomOffsets = useMemo(
@@ -532,7 +610,7 @@ export default function ObservatoryPage() {
               {/* 仅为 Target 显示文字标签 */}
               {c.isTarget && phase >= 4 && (
                 <div className="mt-3 text-[10px] text-brand-emerald-400 font-bold tracking-widest bg-brand-slate-900/80 px-2 py-0.5 rounded-sm whitespace-nowrap animate-in fade-in duration-1000 border border-brand-emerald-900/50 shadow-md">
-                  异星领航员 0x9F3E
+                  {useAgentStore.getState().bestMatchUser?.username || "异星灵魂"}
                 </div>
               )}
             </div>

@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
-import { getPersonalizedTips } from "@/data/medicalKnowledge";
+import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
 function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
@@ -84,7 +84,10 @@ export default function BlueprintPage() {
   const getSerializedPayload = useAgentStore(
     (state) => state.getSerializedPayload,
   );
+  const bestMatchUser = useAgentStore((state) => state.bestMatchUser);
   const [isRendered, setIsRendered] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
 
   // 预生成星空背景粒子保持沉浸感
   const stars = useMemo(
@@ -157,6 +160,34 @@ export default function BlueprintPage() {
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
+    
+    // 发起大模型动态解读请求
+    const fetchAnalysis = async () => {
+      try {
+        const res = await fetch("/api/blueprint-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            myPayload,
+            partnerData: mockPartnerData,
+            isSolo: false,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAnalysisData(data);
+        } else {
+          console.error("Analysis generation failed");
+        }
+      } catch (e) {
+        console.error("API error", e);
+      } finally {
+        setIsLoadingAnalysis(false);
+      }
+    };
+    
+    fetchAnalysis();
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -218,7 +249,7 @@ export default function BlueprintPage() {
           <div className="text-xs sm:text-sm font-bold text-brand-cyan-500 uppercase flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-4">
             <span>双盲博弈: 灵魂契合度 99.8%</span>
             <span className="hidden sm:inline text-brand-slate-500">|</span>
-            <span>匹配到的异星伴侣 ID: 0x9F3E_SEC</span>
+            <span>匹配到的异星伴侣: {bestMatchUser ? bestMatchUser.username : "0x9F3E_SEC"}</span>
           </div>
         </header>
 
@@ -298,47 +329,50 @@ export default function BlueprintPage() {
               </h2>
 
               <div className="text-xs sm:text-sm text-brand-slate-300 leading-relaxed space-y-4">
-                <div className="border-l-2 border-brand-cyan-500/50 pl-3">
-                  <span className="font-bold text-brand-cyan-400 block mb-1">
-                    👨‍⚕️ 情感医生诊断：性格齿轮的咬合
-                  </span>
-                  <p>
-                    大白话：你的心理防线是{" "}
-                    <span className="text-white font-bold">
-                      [{myPayload.defenseLevel}/100]
-                    </span>
-                    。
-                    {myPayload.defenseLevel > 60
-                      ? " 看似冷酷高墙，其实内心极度渴望被强势突破和紧紧包裹。而系统为你匹配的他，恰好拥有着游刃有余的包容力与掌控欲，能轻易撕下你的伪装，给你绝对的安全感。"
-                      : " 你不喜欢充满压迫感的束缚，更喜欢留下试探与喘息的空间。而系统为你匹配的他，刚好是一个懂得循序渐进、温柔引导你的耐性捕手。"}
-                  </p>
-                </div>
-
-                <div className="border-l-2 border-brand-emerald-400/50 pl-3">
-                  <span className="font-bold text-brand-emerald-400 block mb-1">
-                    🛠️ 工程师解读：冰与火的双人舞
-                  </span>
-                  <p>
-                    大白话：关于物理温度，你喜欢『{myPayload.tempPreference}
-                    』，对方喜欢『{mockPartnerData.tempPreference}』。
-                    这套【双人感官同步方案】设备会通过动态调节，自动在这两种极端感受中交替循环，让你们在冰火两重天的碰撞中，一起被推到共同的巅峰。
-                  </p>
-                </div>
-
-                {myPayload.hiddenNeed && (
-                  <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
-                    <span className="font-bold text-brand-rose-400 block mb-1 text-xs">
-                      🔒 关于你不为人知的隐秘癖好...
-                    </span>
-                    <p className="italic text-brand-slate-400">
-                      你在登舱前偷偷写下的话：“{myPayload.hiddenNeed}”
-                    </p>
-                    <p className="mt-2 text-brand-cyan-300">
-                      系统给到了回执：对方看了之后笑了笑说，“巧了，我一直在等一个敢提这种要求的同类。”
-                      ——
-                      你们的这点小秘密，已经被彻底编译进了这台双方联动设备的震动马达里。
-                    </p>
+                {isLoadingAnalysis ? (
+                  <div className="flex flex-col gap-5 animate-pulse">
+                    <div className="border-l-2 border-brand-cyan-500/30 pl-3">
+                      <div className="h-4 w-40 bg-brand-cyan-900/40 rounded mb-2"></div>
+                      <div className="h-3 w-full bg-brand-slate-800/80 rounded mb-1"></div>
+                      <div className="h-3 w-5/6 bg-brand-slate-800/80 rounded mb-1"></div>
+                      <div className="h-3 w-2/3 bg-brand-slate-800/80 rounded"></div>
+                    </div>
+                    <div className="border-l-2 border-brand-emerald-400/30 pl-3">
+                      <div className="h-4 w-40 bg-brand-emerald-900/40 rounded mb-2"></div>
+                      <div className="h-3 w-full bg-brand-slate-800/80 rounded mb-1"></div>
+                      <div className="h-3 w-3/4 bg-brand-slate-800/80 rounded"></div>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="border-l-2 border-brand-cyan-500/50 pl-3">
+                      <span className="font-bold text-brand-cyan-400 block mb-1">
+                        👨‍⚕️ 情感医生诊断：性格齿轮的咬合
+                      </span>
+                      <p>{analysisData?.doctorDiagnosis}</p>
+                    </div>
+
+                    <div className="border-l-2 border-brand-emerald-400/50 pl-3">
+                      <span className="font-bold text-brand-emerald-400 block mb-1">
+                        🛠️ 工程师解读：冰与火的双人舞
+                      </span>
+                      <p>{analysisData?.engineerAnalysis}</p>
+                    </div>
+
+                    {analysisData?.hiddenFeedback && myPayload.hiddenNeed && (
+                      <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
+                        <span className="font-bold text-brand-rose-400 block mb-1 text-xs">
+                          🔒 关于你不为人知的隐秘癖好...
+                        </span>
+                        <p className="italic text-brand-slate-400">
+                          你在登舱前偷偷写下的话：“{myPayload.hiddenNeed}”
+                        </p>
+                        <p className="mt-2 text-brand-cyan-300">
+                          {analysisData.hiddenFeedback}
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -346,49 +380,13 @@ export default function BlueprintPage() {
         </div>
 
         {/* 深空医学档案 */}
-        <section className="mt-8 bg-brand-slate-900/40 border border-brand-cyan-900/30 rounded-sm p-4 sm:p-6 relative">
-          <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-emerald-400 rounded-tl-sm" />
-          <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-emerald-400 rounded-tr-sm" />
-
-          <h2 className="text-sm text-brand-emerald-400 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2 flex items-center gap-2">
-            🔬 [ 深空医典：为你定制的科普档案 ]
-          </h2>
-
-          <div className="space-y-4">
-            {getPersonalizedTips({
-              defenseLevel: myPayload.defenseLevel,
-              tempPreference: myPayload.tempPreference,
-              rhythmPerception: myPayload.rhythmPerception,
-            }).map((card) => (
-              <div
-                key={card.id}
-                className="border-l-2 border-brand-cyan-500/40 pl-4 py-2"
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm">{card.icon}</span>
-                  <span className="text-xs font-bold text-white tracking-wide">
-                    {card.title}
-                  </span>
-                </div>
-                <p className="text-xs text-brand-slate-400 leading-relaxed mb-1">
-                  {card.detail}
-                </p>
-                <p className="text-[10px] text-brand-slate-600 italic">
-                  — {card.source}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 text-center">
-            <button
-              onClick={() => router.push("/knowledge")}
-              className="text-[10px] text-brand-cyan-500 hover:text-brand-cyan-400 tracking-widest uppercase transition-colors"
-            >
-              [ 📚 探索更多深空医典 → ]
-            </button>
-          </div>
-        </section>
+        <div className="mt-8">
+          <MedicalDictionary
+            defenseLevel={myPayload.defenseLevel}
+            tempPreference={myPayload.tempPreference}
+            rhythmPerception={myPayload.rhythmPerception}
+          />
+        </div>
 
         {/* 底部功能盘 */}
         <footer className="pt-12 text-center space-y-4">

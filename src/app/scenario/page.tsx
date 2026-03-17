@@ -4,7 +4,14 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { TempPreference } from "@/types/agent";
-import { scenarioTips } from "@/data/medicalKnowledge";
+
+interface ScenarioTip {
+  scenarioId: number;
+  icon: string;
+  title: string;
+  content: string;
+  source: string;
+}
 
 interface Scenario {
   id: number;
@@ -26,6 +33,8 @@ export default function ScenarioPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const [dbScenarioTips, setDbScenarioTips] = useState<ScenarioTip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [chosenSide, setChosenSide] = useState<"A" | "B" | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showTip, setShowTip] = useState(false);
@@ -44,6 +53,19 @@ export default function ScenarioPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => setIsRendered(true), 300);
+    
+    // Fetch scenario tips from the database
+    fetch("/api/knowledge?type=scenario")
+      .then((res) => res.json())
+      .then((data: ScenarioTip[]) => {
+        setDbScenarioTips(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch scenario tips:", err);
+        setIsLoading(false);
+      });
+      
     return () => clearTimeout(timer);
   }, []);
 
@@ -256,6 +278,27 @@ export default function ScenarioPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-brand-slate-950 font-mono flex items-center justify-center relative overflow-hidden">
+        <div className="flex flex-col items-center gap-6 z-10">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full" />
+            <div className="absolute inset-0 border-4 border-t-brand-cyan-400 border-r-brand-cyan-400 rounded-full animate-spin" />
+          </div>
+          <div className="text-center">
+            <p className="text-brand-cyan-400 text-sm font-bold tracking-widest uppercase mb-2 animate-pulse">
+              SYNCING PROTOCOLS
+            </p>
+            <p className="text-brand-slate-500 text-xs tracking-wide">
+              正在加载异星交规与情境预设...
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-brand-slate-950 text-white font-mono flex flex-col items-center justify-center relative overflow-hidden p-4">
       {/* 深空背景 */}
@@ -445,7 +488,7 @@ export default function ScenarioPage() {
 
       {/* 转场科普浮层 */}
       {showTip && (() => {
-        const tip = scenarioTips.find((t) => t.scenarioId === currentScenario.id);
+        const tip = dbScenarioTips.find((t) => t.scenarioId === currentScenario.id);
         if (!tip) return null;
         return (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-slate-950/60 backdrop-blur-sm">

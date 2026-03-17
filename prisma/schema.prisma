@@ -1,0 +1,57 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User 表 - 核心用户认证与参数档案
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  avatar           String?
+  token            String?  @unique
+  
+  // 第二我 (SecondMe) 拉取的补充信息
+  bio              String?
+  title            String?
+  selfIntroduction String?  @db.Text
+  shades           Json?    // Array<{shadeName, shadeDescription, shadeContent}>
+  softMemory       Json?    // Array<{factObject, factContent}>
+
+  // 内部空间 (Inner Space) 本我领航员参数
+  defenseLevel     Int?
+  tempPreference   String?
+  rhythmPerception Int?
+  hiddenNeed       String?  @db.Text
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// 医疗字典词条
+model KnowledgeCard {
+  id          String   @id @default(cuid())
+  word        String
+  explanation String   @db.Text
+  tags        String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 情境提示 (单人/双人判断树的提示语句)
+model ScenarioTip {
+  id           String   @id @default(cuid())
+  type         String   // "solo" | "paired"
+  content      String   @db.Text
+  requirement  String?  // 如 "defenseLevel>80" 或 "rhythmPerception<30"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

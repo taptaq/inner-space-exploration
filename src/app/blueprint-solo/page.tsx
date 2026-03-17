@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
+import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
 function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
@@ -71,6 +72,8 @@ export default function BlueprintSoloPage() {
     (state) => state.getSerializedPayload,
   );
   const [isRendered, setIsRendered] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
 
   // 预生成孤寂星空背景粒子保持沉浸感
   const stars = useMemo(
@@ -132,6 +135,33 @@ export default function BlueprintSoloPage() {
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
+
+    // 发起大模型动态单人解读请求
+    const fetchAnalysis = async () => {
+      try {
+        const res = await fetch("/api/blueprint-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            myPayload,
+            isSolo: true,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAnalysisData(data);
+        } else {
+          console.error("Analysis generation failed");
+        }
+      } catch (e) {
+        console.error("API error", e);
+      } finally {
+        setIsLoadingAnalysis(false);
+      }
+    };
+    
+    fetchAnalysis();
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -299,34 +329,57 @@ export default function BlueprintSoloPage() {
                 [ 分析层：AI独立医学客座批注 ]
               </h2>
               <div className="text-xs text-brand-slate-400/80 leading-relaxed space-y-4 mt-4">
-                <p>
-                  <strong className="text-sky-300">👨‍⚕️ 医生诊断：</strong>
-                  目前没有在这片星海中找到能让你完全卸下防线（
-                  {myPayload.defenseLevel}
-                  /100）的理想伴侣。但这并不是坏事，强扭的瓜不甜，也许现在的你更适合专注于取悦自己。
-                </p>
-                <p>
-                  <strong className="text-sky-300">🛠️ 架构师建议：</strong>
-                  与其费力去寻找双人玩具，不如为你量身打造一款单人的全自动化“孤舟”。它会内置全自反馈神经元网，所有的触觉与频率都只为你一个人服务。
-                </p>
-                {myPayload.hiddenNeed && (
-                  <p className="text-brand-indigo-400/80 p-3 bg-brand-indigo-900/20 rounded-md border border-brand-indigo-900/40">
-                    <strong className="text-brand-indigo-300">
-                      🔒 你的私密心愿破译：
-                    </strong>
-                    既然你提到了 &quot;
-                    <span className="font-bold text-white">
-                      {myPayload.hiddenNeed}
-                    </span>
-                    &quot;，我们已经在产品内部预留了专属的高级马达和隐藏功能接口，保证满足你这个不为人知的小癖好。
-                  </p>
+                {isLoadingAnalysis ? (
+                  <div className="flex flex-col gap-4 animate-pulse pt-2">
+                    <div>
+                      <div className="h-4 w-1/3 bg-sky-900/40 rounded mb-2"></div>
+                      <div className="h-3 w-5/6 bg-brand-slate-800/80 rounded mb-1"></div>
+                      <div className="h-3 w-full bg-brand-slate-800/80 rounded"></div>
+                    </div>
+                    <div>
+                      <div className="h-4 w-1/3 bg-brand-indigo-900/40 rounded mb-2"></div>
+                      <div className="h-3 w-4/5 bg-brand-slate-800/80 rounded mb-1"></div>
+                      <div className="h-3 w-2/3 bg-brand-slate-800/80 rounded"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p>
+                      <strong className="text-sky-300">👨‍⚕️ 医生诊断：</strong>
+                      {analysisData?.doctorDiagnosis}
+                    </p>
+                    <p>
+                      <strong className="text-sky-300">🛠️ 架构师建议：</strong>
+                      {analysisData?.engineerAnalysis}
+                    </p>
+                    {analysisData?.hiddenFeedback && myPayload.hiddenNeed && (
+                      <p className="text-brand-indigo-400/80 p-3 bg-brand-indigo-900/20 rounded-md border border-brand-indigo-900/40 mt-4">
+                        <strong className="text-brand-indigo-300 block mb-2">
+                          🔒 你的私密心愿破译：
+                        </strong>
+                        <span className="italic">"{myPayload.hiddenNeed}"</span>
+                        <br/><br/>
+                        {analysisData.hiddenFeedback}
+                      </p>
+                    )}
+                    <p className="text-sky-400 mt-6 font-bold border-t border-brand-slate-800 pt-3 inline-block text-sm">
+                      最终座右铭: &quot;我自己，即是宇宙最大的引力源。&quot;
+                    </p>
+                  </>
                 )}
-                <p className="text-sky-400 mt-6 font-bold border-t border-brand-slate-800 pt-3 inline-block text-sm">
-                  最终座右铭: &quot;我自己，即是宇宙最大的引力源。&quot;
-                </p>
               </div>
             </div>
           </section>
+        </div>
+
+        {/* 深空医学档案 */}
+        <div className="mt-8">
+          <MedicalDictionary
+            defenseLevel={myPayload.defenseLevel}
+            tempPreference={myPayload.tempPreference}
+            rhythmPerception={myPayload.rhythmPerception}
+            className="border-sky-900/40 ring-1 ring-sky-500/20"
+          />
         </div>
 
         {/* 底部功能盘 */}
@@ -335,6 +388,13 @@ export default function BlueprintSoloPage() {
             rhythm={myPayload.rhythmPerception} 
             temp={myPayload.tempPreference}
           />
+          <br />
+          <button
+            onClick={() => router.push("/match")}
+            className="px-8 py-3 border border-brand-emerald-500/50 text-brand-emerald-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-emerald-500/10 hover:shadow-[0_0_15px_rgba(52,211,153,0.2)] transition-all"
+          >
+            [ 🎰 盲盒配对 · 去看看还有没有合适的信号 ]
+          </button>
           <br />
           <button
             onClick={() => router.push("/")}
