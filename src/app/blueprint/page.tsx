@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
+import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRender";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
@@ -157,10 +158,27 @@ export default function BlueprintPage() {
     },
   ];
 
+  // 计算和 SVG 渲染组件完全一致的默认回退值
+  const defaultCmf =
+    myPayload.defenseLevel > 60
+      ? "高密度星舰级防震硅胶 (High-density Aircraft Silicone)"
+      : "液态匿踪仿生果冻胶 (Liquid Stealth Jelly TPE)";
+
+  let defaultTemp = "38°C (标准推进)";
+  if (myPayload.tempPreference === "极寒") defaultTemp = "20°C (休眠冰息)";
+  if (myPayload.tempPreference === "冷静") defaultTemp = "32°C (低功率巡航)";
+  if (myPayload.tempPreference === "恒温") defaultTemp = "37.5°C (拟真体温)";
+  if (myPayload.tempPreference === "温热") defaultTemp = "42°C (加力推进)";
+  if (myPayload.tempPreference === "熔毁") defaultTemp = "48°C (感官熔毁临界)";
+
+  const freqMin = Math.max(10, myPayload.rhythmPerception - 30);
+  const freqMax = myPayload.rhythmPerception + 40;
+  const defaultFreq = `${freqMin} - ${freqMax} Hz (曲率震动阈)`;
+
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
-    
+
     // 发起大模型动态解读请求
     const fetchAnalysis = async () => {
       try {
@@ -185,7 +203,7 @@ export default function BlueprintPage() {
         setIsLoadingAnalysis(false);
       }
     };
-    
+
     fetchAnalysis();
 
     return () => clearTimeout(timer);
@@ -249,7 +267,10 @@ export default function BlueprintPage() {
           <div className="text-xs sm:text-sm font-bold text-brand-cyan-500 uppercase flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-4">
             <span>双盲博弈: 灵魂契合度 99.8%</span>
             <span className="hidden sm:inline text-brand-slate-500">|</span>
-            <span>匹配到的异星伴侣: {bestMatchUser ? bestMatchUser.username : "0x9F3E_SEC"}</span>
+            <span>
+              匹配到的异星伴侣:{" "}
+              {bestMatchUser ? bestMatchUser.username : "0x9F3E_SEC"}
+            </span>
           </div>
         </header>
 
@@ -277,26 +298,31 @@ export default function BlueprintPage() {
               <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brand-cyan-500 rounded-br-sm" />
 
               <h2 className="text-sm text-brand-cyan-500 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2">
-                [ 物理层：硬件工程参数集 ]
+                [ 物理层：星舰拟真工程参数 ]
               </h2>
               <ul className="space-y-3 text-sm">
                 <li className="flex justify-between border-b border-brand-slate-800/50 pb-1">
-                  <span className="text-brand-slate-500">核心温度基准线</span>
-                  <span className="text-white font-bold tracking-tight">
-                    38.5°C ± 1.2
+                  <span className="text-brand-slate-500">
+                    核能供暖 (拟真发热)
+                  </span>
+                  <span className="text-white font-bold tracking-tight text-right max-w-[60%]">
+                    {analysisData?.recommendedTemp || defaultTemp}
                   </span>
                 </li>
                 <li className="flex justify-between border-b border-brand-slate-800/50 pb-1">
-                  <span className="text-brand-slate-500">外层硅胶肖氏硬度</span>
-                  <span className="text-white font-bold tracking-tight">
-                    15 - 20HA
+                  <span className="text-brand-slate-500">
+                    舰表涂装 (机体材质)
+                  </span>
+                  <span className="text-white font-bold tracking-tight text-right max-w-[60%]">
+                    {analysisData?.recommendedCmf || defaultCmf}
                   </span>
                 </li>
                 <li className="flex justify-between border-b border-brand-slate-800/50 pb-1">
-                  <span className="text-brand-slate-500">共振双频叠加极值</span>
-                  <span className="text-white font-bold tracking-tight">
-                    本我 {myPayload.rhythmPerception}Hz ~ 异星{" "}
-                    {mockPartnerData.rhythmPerception}Hz
+                  <span className="text-brand-slate-500">
+                    曲率引擎 (震波频段)
+                  </span>
+                  <span className="text-white font-bold tracking-tight text-right max-w-[60%]">
+                    {analysisData?.recommendedFrequency || defaultFreq}
                   </span>
                 </li>
                 <li className="flex justify-between pb-1">
@@ -379,12 +405,22 @@ export default function BlueprintPage() {
           </section>
         </div>
 
+        {/* 概念装备全息图渲染区 */}
+        <div className="mt-8 relative z-20">
+          <EquipmentConceptRender
+            payload={myPayload}
+            analysisData={analysisData}
+          />
+        </div>
+
         {/* 深空医学档案 */}
         <div className="mt-8">
           <MedicalDictionary
             defenseLevel={myPayload.defenseLevel}
             tempPreference={myPayload.tempPreference}
             rhythmPerception={myPayload.rhythmPerception}
+            hiddenNeed={myPayload.hiddenNeed}
+            profileData={myPayload.profileData}
           />
         </div>
 

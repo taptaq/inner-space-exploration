@@ -8,6 +8,8 @@ export interface MedicalDictionaryProps {
   defenseLevel: number;
   tempPreference: string;
   rhythmPerception: number;
+  hiddenNeed?: string;
+  profileData?: any;
   className?: string; // 允许外部传入 className 控制样式
 }
 
@@ -15,6 +17,8 @@ export function MedicalDictionary({
   defenseLevel,
   tempPreference,
   rhythmPerception,
+  hiddenNeed,
+  profileData,
   className = "",
 }: MedicalDictionaryProps) {
   const router = useRouter();
@@ -25,58 +29,48 @@ export function MedicalDictionary({
   useEffect(() => {
     async function fetchKnowledge() {
       try {
-        const res = await fetch("/api/knowledge?type=cards");
-        if (!res.ok) throw new Error("Failed to fetch");
-        const allCards: KnowledgeCard[] = await res.json();
-
-        // 在前端用相同的判断逻辑筛选专属词条
-        const filteredTips: KnowledgeCard[] = [];
-
-        // 根据防线等级推荐心理健康内容
-        if (defenseLevel > 60) {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "psy-001") || allCards[0],
-          );
-        } else {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "psy-003") || allCards[0],
-          );
+        const res = await fetch("/api/knowledge/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            defenseLevel,
+            tempPreference,
+            rhythmPerception,
+            hiddenNeed,
+            profileData,
+          }),
+        });
+        if (!res.ok) {
+           const errText = await res.text();
+           throw new Error(errText || "Failed to generate dynamic knowledge from AI");
         }
-
-        // 根据温度偏好推荐生理知识
-        if (tempPreference === "极寒" || tempPreference === "熔毁") {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "phy-002") || allCards[0],
-          );
-        } else {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "phy-001") || allCards[0],
-          );
-        }
-
-        // 根据节奏感知推荐一条冷知识
-        if (rhythmPerception > 50) {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "fun-001") || allCards[0],
-          );
-        } else {
-          filteredTips.push(
-            allCards.find((c) => c.cardId === "fun-002") || allCards[0],
-          );
-        }
-
-        // 过滤掉未找到的 fallback（以防数据库中没有对应的 ID）
-        setTips(filteredTips.filter((t) => t != null));
+        
+        const generatedCards: KnowledgeCard[] = await res.json();
+        setTips(generatedCards);
       } catch (error: any) {
         console.error("Fetch knowledge error:", error);
         setErrorMsg(error.message || String(error));
+        // Fallback to empty or a minimal default tip if it fails completely
+        setTips([{
+          id: "err-1",
+          cardId: "err-1",
+          category: "safety",
+          icon: "⚠️",
+          title: "深空信号微弱",
+          summary: "当前星区遭受量子风暴干扰，无法下载您的专属医典。",
+          detail: "当面对不确定性时，保持镇定是领航员的第一准则。请稍后再试。",
+          source: "星舰系统自我诊断",
+          tags: ["连接失败", "系统重试"]
+        } as KnowledgeCard]);
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchKnowledge();
-  }, [defenseLevel, tempPreference, rhythmPerception]);
+  }, [defenseLevel, tempPreference, rhythmPerception, hiddenNeed, profileData]);
 
   return (
     <section
@@ -89,7 +83,7 @@ export function MedicalDictionary({
         🔬 [ 深空医典：为你定制的科普档案 ]
         {isLoading && (
           <span className="ml-2 text-[10px] animate-pulse text-brand-slate-500">
-            Retrieving from DB...
+            Generating Personal AI Medical Dictionary...
           </span>
         )}
       </h2>

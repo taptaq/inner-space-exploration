@@ -5,6 +5,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
+import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRender";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
@@ -132,6 +133,23 @@ export default function BlueprintSoloPage() {
     },
   ];
 
+  // 计算和 SVG 渲染组件完全一致的默认回退值
+  const defaultCmf =
+    myPayload.defenseLevel > 60
+      ? "高密度星舰级防震硅胶 (High-density Aircraft Silicone)"
+      : "液态匿踪仿生果冻胶 (Liquid Stealth Jelly TPE)";
+
+  let defaultTemp = "38°C (标准推进)";
+  if (myPayload.tempPreference === "极寒") defaultTemp = "20°C (休眠冰息)";
+  if (myPayload.tempPreference === "冷静") defaultTemp = "32°C (低功率巡航)";
+  if (myPayload.tempPreference === "恒温") defaultTemp = "37.5°C (拟真体温)";
+  if (myPayload.tempPreference === "温热") defaultTemp = "42°C (加力推进)";
+  if (myPayload.tempPreference === "熔毁") defaultTemp = "48°C (感官熔毁临界)";
+
+  const freqMin = Math.max(10, myPayload.rhythmPerception - 30);
+  const freqMax = myPayload.rhythmPerception + 40;
+  const defaultFreq = `${freqMin} - ${freqMax} Hz (曲率震动阈)`;
+
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
@@ -256,56 +274,50 @@ export default function BlueprintSoloPage() {
               <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-sky-500 rounded-br-sm" />
 
               <h2 className="text-sm text-sky-300 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2">
-                [ 觉醒工程：个人基建硬件架构师 ]
+                [ 物理层：星舰拟真工程参数 ]
               </h2>
               <ul className="space-y-4 text-sm mt-6">
                 <li className="flex flex-col border-b border-brand-slate-800/50 pb-2">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-brand-slate-500">
-                      定制体表感知温度
+                  <div className="flex justify-between mb-1 items-start gap-4">
+                    <span className="text-brand-slate-500 shrink-0">
+                      核能供暖 (拟真发热)
                     </span>
-                    <span className="text-white font-bold tracking-tight">
-                      【{myPayload.tempPreference}】恒温闭环
+                    <span className="text-white font-bold tracking-tight text-right text-xs">
+                      {analysisData?.recommendedTemp || defaultTemp}
                     </span>
                   </div>
-                  <span className="text-xs text-sky-400/80">
+                  <span className="text-[10px] text-sky-400/80 mt-1">
                     💡
                     大白话：设备会自动锁定在你最想要的这个温度，不需要别人的体温来温暖你。
                   </span>
                 </li>
-                <li className="flex flex-col border-b border-brand-slate-800/50 pb-2">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-brand-slate-500">
-                      独立震动抗干扰频段
+                <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 mt-3">
+                  <div className="flex justify-between mb-1 items-start gap-4">
+                    <span className="text-brand-slate-500 shrink-0">
+                      曲率引擎 (震波频段)
                     </span>
-                    <span className="text-white font-bold tracking-tight">
-                      {myPayload.rhythmPerception}Hz 单向发散增强
+                    <span className="text-white font-bold tracking-tight text-right text-xs">
+                      {analysisData?.recommendedFrequency || defaultFreq}
                     </span>
                   </div>
-                  <span className="text-xs text-sky-400/80">
+                  <span className="text-[10px] text-sky-400/80 mt-1">
                     💡
                     大白话：完全按照你喜欢的频率节奏来震动，不用配合别人的节奏委屈自己。
                   </span>
                 </li>
-                <li className="flex flex-col pb-2">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-brand-slate-500">
-                      外层硅胶防生肌理
+                <li className="flex flex-col pb-2 mt-3">
+                  <div className="flex justify-between mb-1 items-start gap-4">
+                    <span className="text-brand-slate-500 shrink-0">
+                      舰表涂装 (机体材质)
                     </span>
-                    <span className="text-white font-bold tracking-tight">
-                      {myPayload.defenseLevel > 60
-                        ? "加厚抗冲击型"
-                        : "高透敏锐型"}
+                    <span className="text-white font-bold tracking-tight text-right text-xs">
+                      {analysisData?.recommendedCmf || defaultCmf}
                     </span>
                   </div>
-                  <span className="text-xs text-sky-400/80">
+                  <span className="text-[10px] text-sky-400/80 mt-1">
                     💡 大白话：因为你防线
                     {myPayload.defenseLevel > 60 ? "较高" : "较低"}
-                    ，材质被定制为
-                    {myPayload.defenseLevel > 60
-                      ? "更厚实稳重，给你充分包裹安全感"
-                      : "更柔软通透，能传递更刺激细腻的触觉"}
-                    。
+                    ，极智中枢为你定制了如上的绝佳材质适配。
                   </span>
                 </li>
               </ul>
@@ -372,12 +384,19 @@ export default function BlueprintSoloPage() {
           </section>
         </div>
 
+        {/* 概念装备全息图渲染区 (单人高亮样式) */}
+        <div className="mt-8 relative z-20">
+          <EquipmentConceptRender payload={myPayload} analysisData={analysisData} isSolo={true} />
+        </div>
+
         {/* 深空医学档案 */}
         <div className="mt-8">
           <MedicalDictionary
             defenseLevel={myPayload.defenseLevel}
             tempPreference={myPayload.tempPreference}
             rhythmPerception={myPayload.rhythmPerception}
+            hiddenNeed={myPayload.hiddenNeed}
+            profileData={myPayload.profileData}
             className="border-sky-900/40 ring-1 ring-sky-500/20"
           />
         </div>

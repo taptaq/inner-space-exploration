@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { config, secondmeApi } from "@/lib/secondme";
+import { config, secondmeApi, getCurrentUser } from "@/lib/secondme";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,34 +11,21 @@ export async function GET(req: NextRequest) {
       );
     }
     const token = authHeader.split(" ")[1];
-    const options = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
+    // 利用封装好的方法，确保 shades 和 info 嵌套逻辑解析正确
+    const user = await getCurrentUser(token);
 
-    // 并发请求三个接口
-    const [infoRes, shadesRes, softMemoryRes] = await Promise.allSettled([
-      secondmeApi("/api/secondme/user/info", options),
-      secondmeApi("/api/secondme/user/shades", options),
-      secondmeApi("/api/secondme/user/softmemory?pageNo=1&pageSize=50", options),
-    ]);
-
-    const info = infoRes.status === "fulfilled" ? infoRes.value.data : null;
-    const shades = shadesRes.status === "fulfilled" ? shadesRes.value.data?.shades : [];
-    const softMemory = softMemoryRes.status === "fulfilled" ? softMemoryRes.value.data?.list : [];
-
-    if (!info) {
+    if (!user) {
       return NextResponse.json(
         { error: "Failed to fetch user info" },
         { status: 400 }
       );
     }
 
+    // 格式化输出为期望的 profileData 形式
     return NextResponse.json({
-      info,
-      shades,
-      softMemory,
+      info: user,
+      shades: user.shades,
+      softMemory: user.softMemory,
     });
   } catch (error: any) {
     console.error("Profile API error:", error);

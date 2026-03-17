@@ -39,8 +39,13 @@ model User {
 // 医疗字典词条
 model KnowledgeCard {
   id          String   @id @default(cuid())
-  word        String
-  explanation String   @db.Text
+  cardId      String   @unique
+  category    String
+  icon        String
+  title       String
+  summary     String
+  detail      String   @db.Text
+  source      String
   tags        String[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -49,9 +54,11 @@ model KnowledgeCard {
 // 情境提示 (单人/双人判断树的提示语句)
 model ScenarioTip {
   id           String   @id @default(cuid())
-  type         String   // "solo" | "paired"
+  scenarioId   Int      @unique
+  icon         String
+  title        String
   content      String   @db.Text
-  requirement  String?  // 如 "defenseLevel>80" 或 "rhythmPerception<30"
+  source       String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
