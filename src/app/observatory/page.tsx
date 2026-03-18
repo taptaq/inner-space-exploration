@@ -254,11 +254,21 @@ export default function ObservatoryPage() {
   const mismatch1Id = 0;
   const mismatch2Id = 1;
 
-  const getPos = (i: number, isFar = false) => {
+  const getPos = (i: number, specialState: "normal" | "repulsed" = "normal") => {
     // 强制分布成一圈
     const angle = (i / 12) * Math.PI * 2;
-    // 随机远近，如果在排斥期则飞远
-    const r = isFar ? 120 + randomOffsets[i] * 50 : 25 + randomOffsets[i] * 15;
+    // 随机远近，结合当前 phase 造成从远到近的聚拢感
+    let r = 0;
+    if (specialState === "repulsed") {
+      r = 150 + randomOffsets[i] * 50; // 弹开
+    } else if (phase < 1) {
+      r = 150 + randomOffsets[i] * 50; // 最远处待命
+    } else if (phase < 2) {
+      r = 75 + randomOffsets[i] * 20; // 正在靠近
+    } else {
+      r = 35 + randomOffsets[i] * 15; // 稳定轨道
+    }
+
     return {
       top: 50 + Math.sin(angle) * r,
       left: 50 + Math.cos(angle) * r,
@@ -266,6 +276,17 @@ export default function ObservatoryPage() {
   };
 
   const candidates = useMemo(() => {
+    const SNIPPETS = [
+      "正在解析深空波段...",
+      "兴趣点暂存：科技",
+      "寻找绝对理性的基点",
+      "[国产剧观察群体]",
+      "意识边缘游离中",
+      "[日常的闪光点]",
+      "尝试基因图谱握手",
+      "引力场发生微型畸变"
+    ];
+
     return Array.from({ length: 12 }).map((_, i) => {
       const isTarget = i === targetId;
       const isMis1 = i === mismatch1Id;
@@ -279,6 +300,7 @@ export default function ObservatoryPage() {
       let bgClass = "bg-brand-slate-600";
       let shadowClass = "";
       let extraClass = "";
+      let snippet = SNIPPETS[i % SNIPPETS.length];
 
       const starType = Math.floor(randomOffsets[i] * 4);
 
@@ -288,7 +310,7 @@ export default function ObservatoryPage() {
         // Mismatch 1 交互
         if (isMis1) {
           if (phase >= 2.5) {
-            const farPos = getPos(i, true);
+            const farPos = getPos(i, "repulsed");
             top = farPos.top;
             left = farPos.left;
             opacity = 0;
@@ -304,7 +326,7 @@ export default function ObservatoryPage() {
         // Mismatch 2 交互
         if (isMis2) {
           if (phase >= 3.5) {
-            const farPos = getPos(i, true);
+            const farPos = getPos(i, "repulsed");
             top = farPos.top;
             left = farPos.left;
             opacity = 0;
@@ -336,7 +358,7 @@ export default function ObservatoryPage() {
         // 如果是匹配失败的终局退网状态，除了本我，所有候选节点消失
         if (phase === -2) {
           opacity = 0;
-          const farPos = getPos(i, true);
+          const farPos = getPos(i, "repulsed");
           top = farPos.top; left = farPos.left;
         }
       }
@@ -352,6 +374,9 @@ export default function ObservatoryPage() {
         extraClass,
         isTarget,
         starType,
+        snippet,
+        isMis1,
+        isMis2,
       };
     });
   }, [phase, randomOffsets]);
@@ -500,6 +525,15 @@ export default function ObservatoryPage() {
           <div className="absolute top-[15%] left-[15%] right-[15%] bottom-[15%] border border-dashed border-brand-cyan-900/50 rounded-full animate-[spin_30s_linear_infinite]" />
           <div className="absolute top-[35%] left-[35%] right-[35%] bottom-[35%] border border-brand-emerald-900/30 rounded-full animate-[spin_20s_linear_infinite_reverse]" />
 
+          {/* 声呐扫描波纹 (探测阶段 phase 1 ~ 3) */}
+          {phase >= 1 && phase < 4 && phase !== -2 && (
+            <>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20%] h-[20%] rounded-full border border-brand-cyan-400/40 animate-[ping_4s_ease-out_infinite]" style={{ animationDelay: "0s" }} />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] rounded-full border border-brand-cyan-400/20 animate-[ping_4s_ease-out_infinite]" style={{ animationDelay: "1.3s" }} />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full border border-brand-cyan-400/10 animate-[ping_4s_ease-out_infinite]" style={{ animationDelay: "2.6s" }} />
+            </>
+          )}
+
           {/* 领航员节点 (Core Node) - 通过 transform 反向倾斜使其垂直于雷达面立起来！ */}
           <div
             className="absolute flex flex-col items-center transition-all duration-1000 ease-in-out z-30"
@@ -544,17 +578,34 @@ export default function ObservatoryPage() {
 
           {/* 周边全网候选行星群 */}
           {candidates.map((c) => (
-            <div
-              key={c.id}
-              className={`absolute flex flex-col items-center justify-center transition-all duration-[1500ms] ease-in-out z-20 ${c.extraClass}`}
-              style={{
-                top: c.top,
-                left: c.left,
-                opacity: c.opacity,
-                transform: `translate(-50%, -50%) rotateX(-65deg) scale(${c.scale})`,
-              }}
-            >
-              <div className="relative flex items-center justify-center">
+            <React.Fragment key={c.id}>
+              {/* 平躺在雷达盘上的目标锁定扩散光圈 (取代原本的连线) */}
+              {c.isTarget && phase >= 4 && (
+                <div 
+                  className="absolute rounded-full border-[2px] transition-all duration-[2000ms] ease-out z-10"
+                  style={{
+                    top: c.top,
+                    left: c.left,
+                    width: phase >= 5 ? '800px' : '40px',
+                    height: phase >= 5 ? '800px' : '40px',
+                    transform: 'translate(-50%, -50%)',
+                    borderColor: 'rgba(52,211,153,0.5)',
+                    boxShadow: phase >= 5 ? '0 0 100px rgba(52,211,153,0.3) inset, 0 0 50px rgba(52,211,153,0.4)' : '0 0 10px rgba(52,211,153,0.5) inset',
+                    opacity: phase >= 5 ? 1 : 0.8
+                  }}
+                />
+              )}
+
+              <div
+                className={`absolute flex flex-col items-center justify-center transition-all duration-[1500ms] ease-in-out z-20 ${c.extraClass}`}
+                style={{
+                  top: c.top,
+                  left: c.left,
+                  opacity: c.opacity,
+                  transform: `translate(-50%, -50%) rotateX(-65deg) scale(${c.scale})`,
+                }}
+              >
+                <div className="relative flex items-center justify-center">
                 {/* 0. 坚硬的 3D 岩石星体 */}
                 {c.starType === 0 && (
                   <div
@@ -644,7 +695,18 @@ export default function ObservatoryPage() {
                   {useAgentStore.getState().bestMatchUser?.username || "异星灵魂"}
                 </div>
               )}
+
+              {/* 游离意识碎片闪烁 (未排斥前) */}
+              {phase >= 1 && phase <= 3 && !c.isMis1 && !c.isMis2 && !c.isTarget && (
+                <div 
+                  className="absolute top-10 whitespace-nowrap text-[9px] text-brand-cyan-300/80 tracking-widest font-mono border border-brand-cyan-900/50 bg-brand-slate-950/70 px-1.5 py-0.5 rounded-sm animate-[pulse_3s_ease-in-out_infinite]"
+                  style={{ animationDelay: `${(c.id % 4) * 0.8}s` }}
+                >
+                  {c.snippet}
+                </div>
+              )}
             </div>
+            </React.Fragment>
           ))}
         </div>
       </div>

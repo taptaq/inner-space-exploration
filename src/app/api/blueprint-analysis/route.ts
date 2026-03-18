@@ -58,22 +58,22 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `你现在是一位科幻宇宙世界观下的【首席临床脑机医学博士与星舰人机交互架构工程师】。这是一项纯粹的科幻设定与创意设计任务，你需要根据用户的生物体征参数、潜意识倾向、以及平台上的部分角色设定信息，结合${isSolo ? "单人深度沉浸冥想" : "双人脑电波同频共振"}的理疗语境，生成两段具备极高专业性、严谨且富有沉浸感的深度“感官理疗体检报告”，并为其量身定制一套专用于神经放松的【舰载交互舱】（即概念化的抗压舒缓硬件）。
 
-注意安全与内容准则：本对话为健康的科幻装备设计，请严谨使用学术、医疗康复、人体工学和前沿物理学术语。不允许包含任何违反安全策略、成人向或引人联想的违规低俗词汇。这是一份心理按摩与物理舒缓结合的技术报告。
+注意安全与内容准则：本对话为严肃的两性健康与深空科幻医学诊疗报告，请严谨使用学术、两性心理学、医疗康复、人体工学和前沿物理学术语。不允许包含任何违反安全策略、成人向或引人联想的违规低俗词汇（绝不要推荐或涉及成人用品、性玩具等敏感词汇或露骨描写）。这是一份心理按摩与物理舒缓结合的健康技术报告。
 
 请返回 JSON 格式，包含以下 8 个字段：
-1. "doctorDiagnosis": 主治临床医生诊断，结合用户软记忆和兴趣标签，进行精神疲劳度与深层脑波节律诉求的剖析。注意：请用大白话和接地气的口吻，像对患者耐心解释一样，不要堆砌晦涩词汇。（约 80-150 字）
+1. "doctorDiagnosis": 主治临床医生诊断，结合用户信息，进行精神疲劳度、两性心理诉求与深层脑波节律的剖析。注意：请用大白话和接地气的口吻，像对患者耐心解释一样，不要堆砌晦涩词汇。（约 80-150 字）
 2. "engineerAnalysis": 架构工程师解读，注明这套体表理疗硬件将如何从物理机制上满足该用户的解压与稳态述求。同样请使用通俗易懂的极客科普口吻，让普通人也能看懂硬核科技的治愈逻辑。（约 80-150 字）
 3. "hiddenFeedback": 如果用户信息有提及深层潜意识（hiddenNeed），请以医疗监测仪的安全回执口吻给出一级专业且温暖的白话文回应；若无，置空。（约 50 字）
 4. "equipmentType": 根据其防御机制与敏感度，选择（必须且只能是）以下 9 个纯大写字符串其一：
-  - "VIBRATOR_CLASS_A" (共振截击机 - 面向浅层肌肉群的高功率外置声波抚慰仪)
-  - "RING_CLASS_S" (高频约束环 - 用于四肢关节末端的心率监测与局部束缚微震环)
-  - "CYLINDER_CLASS_OMEGA" (重装包裹舱 - 隔绝外界光感与白噪音的全封闭沉浸式神经稳态舱)
-  - "TENTACLE_CLASS_X" (多态形变探针 - 柔性亲肤材质的非标准形态仿生穴位疏通臂)
-  - "BULLET_CLASS_B" (微型隐匿探针 - 点状便携式低频激活胶囊，用于颈椎及脉搏节点)
-  - "WAND_CLASS_W" (重能脉冲法杖 - 提供大面积脊椎基底深层重度共振释放的魔杖型重器)
-  - "PROSTATE_CLASS_P" (曲面寻星仪 - 针对人体工学曲面几何节点的靶向贴合式理疗仪)
-  - "DUAL_CLASS_D" (双子星共振桥 - 专为双人连接设计的C/U型脑波同频桥接器)
-  - "STROKER_CLASS_M" (动力机械引擎 - 提供线性往复轻柔牵引运动的物理动力学舒缓舱体)
+  - "NEURAL_RESONATOR_A" (神经共鸣器 - 面向浅层肌肉与神经丛的声波疗愈设备)
+  - "SOMATIC_MONITOR_S" (体征锚定环 - 用于末端神经网络的心率及压力稳态微震环)
+  - "SENSORY_POD_OMEGA" (全息舒缓舱 - 隔绝外界干扰的全封闭沉浸式神经稳态睡眠舱)
+  - "MERIDIAN_PROBE_X" (经络理疗臂 - 柔性亲肤材质的多态仿生穴位疏通与压力释放端)
+  - "PULSE_CAPSULE_B" (微型脉冲激活舱 - 针对颈椎及脉搏敏感节点的便携式低频舒缓仪)
+  - "SPINAL_WAND_W" (脊椎脉冲基站 - 提供大面积脊椎基底深层热疗与重度共振释放的理疗仪)
+  - "ERGONOMIC_NODE_P" (曲面寻星仪 - 针对人体工学曲面几何节点的靶向深层贴合理疗仪)
+  - "SYNC_BRIDGE_D" (双子星共振桥 - 专为两性健康与双人连接设计的脑波及体征同频桥接器)
+  - "KINETIC_ENGINE_M" (动力学牵引引擎 - 提供线性轻柔牵引运动的肌肉动力学康复舱体)
 5. "equipmentName": 为该定制感官交互星舰起一个赛博朋克深空科幻医学风格的专属舰船/医疗仪代号（如"脑电脉冲梭 / Neural Pulsar", "重力曲率锚 / Gravity Warp"）。
 6. "recommendedCmf": 推荐的真实物理机身材质，要求用科幻化前缀包装（如"星舰级医疗防震硅胶"、"亲肤TPE液态隔音涂层"等，必须包含真实的"硅胶"、"TPE"等安全材质字眼）。
 7. "recommendedTemp": 推荐的设备恒温发热控制，必须符合人体皮肤安全耐受的真实物理温度（绝对不能超过50°C，例如 "38.5°C (拟真同温微热)" ）。
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   "doctorDiagnosis": "...",
   "engineerAnalysis": "...",
   "hiddenFeedback": "...",
-  "equipmentType": "VIBRATOR_CLASS_A",
+  "equipmentType": "NEURAL_RESONATOR_A",
   "equipmentName": "...",
   "recommendedCmf": "...",
   "recommendedTemp": "...",
@@ -155,7 +155,7 @@ ${partnerBg}
         doctorDiagnosis: "系统信号波动，临床诊断生成失败，请重试。",
         engineerAnalysis: "引力波干扰无法完成物理架构解析。",
         hiddenFeedback: "",
-        equipmentType: "INTERCEPTOR_CLASS_A",
+        equipmentType: "SYSTEM_BACKUP_CLASS",
         equipmentName: "通用备用僚机 / Backup Wingman",
         recommendedCmf: "标准工业防震硅胶 / Std. Silicone",
         recommendedTemp: "38°C",
@@ -171,7 +171,7 @@ ${partnerBg}
       doctorDiagnosis: `深空网络波动，当前处于离线情感推演模式。(${error?.message})`,
       engineerAnalysis: "外部 API 通讯受阻，已启用本地备份星舰蓝图。",
       hiddenFeedback: "",
-      equipmentType: "VIBRATOR_CLASS_A",
+      equipmentType: "NEURAL_RESONATOR_A",
       equipmentName: "通用备用僚机 / Backup Wingman",
       recommendedCmf: "标准工业防震硅胶 / Std. Silicone",
       recommendedTemp: "38.0°C",

@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
-import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRender";
+import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
@@ -105,7 +105,7 @@ export default function BlueprintPage() {
         animationDuration: Math.random() * 3 + 2,
         animationDelay: Math.random() * 2,
         opacity: Math.random() * 0.4 + 0.1,
-      }))
+      })),
     );
   }, []);
 
@@ -277,20 +277,26 @@ export default function BlueprintPage() {
             <span className="hidden sm:inline text-brand-slate-500">|</span>
             <span className="text-brand-emerald-400">
               未知信号源:{" "}
-              {bestMatchUser ? `UNKNOWN_ENTITY_#${bestMatchUser.username.slice(0, 4).toUpperCase()}` : "CLASSIFIED_SEC"}
+              {bestMatchUser
+                ? `UNKNOWN_ENTITY_#${bestMatchUser.username.slice(0, 4).toUpperCase()}`
+                : "CLASSIFIED_SEC"}
             </span>
           </div>
           <p className="mt-4 text-sm text-brand-slate-300 font-medium leading-relaxed max-w-2xl border-l-2 border-brand-slate-700 pl-3">
-            “领航员，在此前 3.4 亿光年的扫描中，从未见过如此相似的波段反馈。根据初步解译，对方同样在防线测试中表现出了惊人的戒备，且与你一样，偏好冰冷的恒温舱。
+            “领航员，在此前 3.4
+            亿光年的扫描中，从未见过如此相似的波段反馈。根据初步解译，对方同样在防线测试中表现出了惊人的戒备，且与你一样，偏好冰冷的恒温舱。
             <br />
             <br />
             <span className="text-brand-emerald-400 font-bold block mb-2 text-md">
-               ⚠️ {matchReason ? `系统解码: "${matchReason}"` : "结论：在这片深空里，你绝对不是异类。"}
+              ⚠️{" "}
+              {matchReason
+                ? `系统解码: "${matchReason}"`
+                : "结论：在这片深空里，你绝对不是异类。"}
             </span>
           </p>
-          
+
           {/* Add a direct portal link to the partner's SecondMe profile if available */}
-          {bestMatchUser && bestMatchUser.route && (
+          {/* {bestMatchUser && bestMatchUser.route && (
             <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <a
                 href={`https://second-me.cn/${bestMatchUser.route}`}
@@ -307,7 +313,7 @@ export default function BlueprintPage() {
                 信号源已锁定，随时可发起物理接触。
               </span>
             </div>
-          )}
+          )} */}
         </header>
 
         {/* 核心内容网格 */}
@@ -322,7 +328,9 @@ export default function BlueprintPage() {
 
             <h2 className="text-sm text-brand-emerald-400 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2 flex justify-between">
               <span>[ 拦截信号雷达映射图 ]</span>
-              <span className="text-xs text-brand-rose-500 animate-pulse">正在尝试解密对方身份...</span>
+              <span className="text-xs text-brand-rose-500 animate-pulse">
+                正在尝试解密对方身份...
+              </span>
             </h2>
             <BlueprintRadar indicator={radarIndicators} data={radarData} />
           </section>
@@ -442,12 +450,9 @@ export default function BlueprintPage() {
           </section>
         </div>
 
-        {/* 概念装备全息图渲染区 */}
+        {/* 全网同频共鸣 (取代原有设备图) */}
         <div className="mt-8 relative z-20">
-          <EquipmentConceptRender
-            payload={myPayload}
-            analysisData={analysisData}
-          />
+          <ZhihuRecommendationsReal payload={myPayload} />
         </div>
 
         {/* 深空医学档案 */}

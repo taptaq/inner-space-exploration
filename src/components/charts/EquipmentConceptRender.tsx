@@ -19,18 +19,18 @@ export const EquipmentConceptRender = ({
   // 根据参数计算衍生器械配置
   const equipmentSpecs = useMemo(() => {
     // 默认回退映射逻辑
-    let typeName = "流星巡游者 (Interceptor)";
-    let typeEn = "VIBRATOR_CLASS_A";
+    let typeName = "脑神经共鸣器 (Neural Resonator)";
+    let typeEn = "NEURAL_RESONATOR_A";
 
     if (payload.defenseLevel < 40 && payload.rhythmPerception > 70) {
-      typeName = "超新星拘束环 (Neural Ring)";
-      typeEn = "RING_CLASS_S";
+      typeName = "体征锚定环 (Somatic Monitor)";
+      typeEn = "SOMATIC_MONITOR_S";
     } else if (payload.defenseLevel > 70 && payload.rhythmPerception < 50) {
-      typeName = "重装静滞舱 (Containment Pod)";
-      typeEn = "CYLINDER_CLASS_OMEGA";
+      typeName = "全息舒缓舱 (Sensory Pod)";
+      typeEn = "SENSORY_POD_OMEGA";
     } else if (payload.hiddenNeed && payload.hiddenNeed.length > 20) {
-      typeName = "多态形变探针 (Morphing Array)";
-      typeEn = "TENTACLE_CLASS_X";
+      typeName = "经络理疗臂 (Meridian Probe)";
+      typeEn = "MERIDIAN_PROBE_X";
     }
 
     const cmfMaterial =
@@ -146,7 +146,7 @@ export const EquipmentConceptRender = ({
 
         <g transform="translate(500, 250)">
           {/* 震动棒流线型 / 兔耳 */}
-          {equipmentSpecs.typeEn.includes("VIBRATOR") && (
+          {equipmentSpecs.typeEn.includes("RESONATOR") && (
             <g
               transform="rotate(-35) scale(1.3)"
               className="animate-[pulse_3s_ease-in-out_infinite]"
@@ -200,7 +200,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 杯型圆柱体 */}
-          {equipmentSpecs.typeEn.includes("CYLINDER") && (
+          {equipmentSpecs.typeEn.includes("POD") && (
             <g
               transform="rotate(15) scale(1.4)"
               className="animate-[pulse_3s_ease-in-out_infinite]"
@@ -263,7 +263,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 环形 */}
-          {equipmentSpecs.typeEn.includes("RING") && (
+          {equipmentSpecs.typeEn.includes("MONITOR") && (
             <g
               transform="scale(1.5)"
               className="animate-[pulse_3s_ease-in-out_infinite]"
@@ -313,7 +313,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 触角伸缩棒 */}
-          {equipmentSpecs.typeEn.includes("TENTACLE") && (
+          {equipmentSpecs.typeEn.includes("PROBE") && (
             <g
               transform="scale(1.3)"
               className="animate-[pulse_3s_ease-in-out_infinite]"
@@ -381,7 +381,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 小型跳蛋 - 隐秘便携流线型 */}
-          {equipmentSpecs.typeEn.includes("BULLET") && (
+          {equipmentSpecs.typeEn.includes("CAPSULE") && (
             <g transform="scale(1.2)" className="animate-[pulse_3s_ease-in-out_infinite]">
               <path d="M-30 40 Q -35 0 -30 -40 Q 0 -80 30 -40 Q 35 0 30 40 Q 0 60 -30 40 Z" fill="none" stroke={primaryColor} strokeWidth="2" strokeDasharray="3 3"/>
               <ellipse cx="0" cy="0" rx="33" ry="12" fill="none" stroke={primaryColor} strokeWidth="1" className="opacity-40" />
@@ -411,7 +411,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 前列腺弯曲仪 - 独特的符合人体工学曲度 */}
-          {equipmentSpecs.typeEn.includes("PROSTATE") && (
+          {equipmentSpecs.typeEn.includes("NODE") && (
             <g transform="scale(1.3) translate(0, 20)" className="animate-[pulse_3s_ease-in-out_infinite]">
               {/* 主弯道 */}
               <path d="M-20 -50 C 40 -60, 50 10, 0 60 C -10 70, -30 70, -30 50 C -30 20, 10 -20, -40 -30 C -50 -35, -30 -50, -20 -50 Z" fill="none" stroke={primaryColor} strokeWidth="2" strokeDasharray="2 4" />
@@ -425,7 +425,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 情侣 C 型共震 - 夹持双向结构 */}
-          {equipmentSpecs.typeEn.includes("DUAL") && (
+          {equipmentSpecs.typeEn.includes("BRIDGE") && (
             <g transform="scale(1.3) rotate(-15)" className="animate-[pulse_3s_ease-in-out_infinite]">
               {/* C型主干外圈 */}
               <path d="M-10 60 C -60 50, -80 -20, -30 -60 C -10 -75, 20 -70, 30 -50 C -40 -30, -30 30, 10 40 C 20 42, -5 65, -10 60 Z" fill="none" stroke={primaryColor} strokeWidth="2" />
@@ -440,7 +440,7 @@ export const EquipmentConceptRender = ({
           )}
 
           {/* 活塞飞机杯/非硅胶包裹舱 - 更加机械化、动力腔体化 */}
-          {equipmentSpecs.typeEn.includes("STROKER") && (
+          {equipmentSpecs.typeEn.includes("ENGINE") && (
             <g transform="rotate(30) scale(1.3)" className="animate-[pulse_3s_ease-in-out_infinite]">
               {/* 外部机械外壳 */}
               <rect x="-40" y="-70" width="80" height="140" rx="15" fill="none" stroke={primaryColor} strokeWidth="2" />

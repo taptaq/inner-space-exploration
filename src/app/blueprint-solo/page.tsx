@@ -5,7 +5,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
-import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRender";
+import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
@@ -398,13 +398,9 @@ export default function BlueprintSoloPage() {
           </section>
         </div>
 
-        {/* 概念装备全息图渲染区 (单人高亮样式) */}
+        {/* 全网同频共鸣 (取代原有设备图) */}
         <div className="mt-8 relative z-20">
-          <EquipmentConceptRender
-            payload={myPayload}
-            analysisData={analysisData}
-            isSolo={true}
-          />
+          <ZhihuRecommendationsReal payload={myPayload} />
         </div>
 
         {/* 深空医学档案 */}

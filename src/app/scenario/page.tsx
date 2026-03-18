@@ -17,8 +17,9 @@ interface Scenario {
   id: number;
   scene: string;
   hint: string; // 口语化提示
-  optionA: { text: string; effect: () => void };
-  optionB: { text: string; effect: () => void };
+  isTextInput?: boolean;
+  optionA?: { text: string; effect: () => void };
+  optionB?: { text: string; effect: () => void };
 }
 
 export default function ScenarioPage() {
@@ -38,6 +39,7 @@ export default function ScenarioPage() {
   const [chosenSide, setChosenSide] = useState<"A" | "B" | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showTip, setShowTip] = useState(false);
+  const [textInput, setTextInput] = useState("");
   const [voiceGender, setVoiceGender] = useState<"female" | "male">("female");
   const [availableVoices, setAvailableVoices] = useState<
     SpeechSynthesisVoice[]
@@ -224,16 +226,11 @@ export default function ScenarioPage() {
     {
       id: 5,
       scene:
-        "坍缩倒计时开始了。宇宙即将重启，你只有最后一秒的自由意志。你选择——",
-      hint: "💡 最后一题：你更享受一个人的独处时光，还是和某个人缠绵到不分彼此？",
-      optionA: {
-        text: "🪐 一个人静静地漂流，在寂寥中与自己和解",
-        effect: () => setAccHidden("渴望独处时与自我的极致对话"),
-      },
-      optionB: {
-        text: "🔗 和某个人纠缠到宇宙尽头，永不松手",
-        effect: () => setAccHidden("渴望与灵魂共振的人产生不可分割的羁绊"),
-      },
+        "最后，在直觉探测的尾声，你可以无需任何防备地写下关于你隐私癖好、或是隐秘的安全感诉求...",
+      hint: "💡 例如想被掌控、渴望完全独处...放心，这里没有任何人会评判你。",
+      isTextInput: true,
+      optionA: { text: "", effect: () => {} },
+      optionB: { text: "", effect: () => {} },
     },
   ];
 
@@ -248,9 +245,9 @@ export default function ScenarioPage() {
 
     // 执行隐式参数映射
     if (side === "A") {
-      currentScenario.optionA.effect();
+      currentScenario.optionA?.effect();
     } else {
-      currentScenario.optionB.effect();
+      currentScenario.optionB?.effect();
     }
 
     // 过渡动画 + 科普 tip 展示
@@ -259,6 +256,20 @@ export default function ScenarioPage() {
     }, 300);
 
     // 显示科普小贴士（用户手动点击才继续）
+    setTimeout(() => {
+      setShowTip(true);
+    }, 600);
+  };
+
+  const handleTextSubmit = () => {
+    if (!textInput.trim() || isTransitioning) return;
+    stopSpeech();
+    setAccHidden(textInput.trim());
+
+    setTimeout(() => {
+      setIsTransitioning(true);
+    }, 300);
+
     setTimeout(() => {
       setShowTip(true);
     }, 600);
@@ -441,10 +452,27 @@ export default function ScenarioPage() {
           </p>
         </div>
 
-        {/* 双选项 */}
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2">
-          {/* 选项 A */}
-          <button
+        {/* 核心问答 / 输入区 */}
+        {currentScenario.isTextInput ? (
+          <div className="w-full flex flex-col items-center gap-6 px-4">
+             <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="[ 记录你的极密档案... ]"
+              className="w-full h-32 bg-brand-slate-900/50 border border-brand-slate-700 rounded-md p-4 text-brand-slate-300 focus:outline-none focus:border-brand-cyan-500/60 transition-colors resize-none placeholder-brand-slate-600 tracking-wider shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
+            />
+            <button
+              onClick={handleTextSubmit}
+              disabled={isTransitioning || !textInput.trim()}
+              className="px-8 py-3 w-full sm:w-auto border border-brand-cyan-500/50 text-brand-cyan-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              [ 封存并进入引力网 ]
+            </button>
+          </div>
+        ) : (
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2">
+            {/* 选项 A */}
+            <button
             onClick={() => handleChoice("A")}
             disabled={isTransitioning}
             className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
@@ -458,7 +486,7 @@ export default function ScenarioPage() {
           >
             <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-              {currentScenario.optionA.text}
+              {currentScenario.optionA?.text}
             </span>
           </button>
 
@@ -477,14 +505,15 @@ export default function ScenarioPage() {
           >
             <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-              {currentScenario.optionB.text}
+              {currentScenario.optionB?.text}
             </span>
           </button>
         </div>
+        )}
 
         {/* 底部提示 */}
         <p className="mt-10 text-xs text-brand-slate-600 tracking-widest animate-pulse">
-          [ 凭你的第一直觉选择 ]
+          {currentScenario.isTextInput ? "[ 探寻内心深处的渴望 ]" : "[ 凭你的第一直觉选择 ]"}
         </p>
       </div>
 
