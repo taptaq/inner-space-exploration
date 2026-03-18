@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
 import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
+import { BlueprintChat } from "@/components/chat/BlueprintChat";
 
 /** 模拟试机按钮组件 */
 /*
@@ -181,42 +182,48 @@ export default function BlueprintPage() {
 
   const fetchCalledRef = useRef(false);
 
+  const fetchAnalysis = useCallback(async (isReload = false) => {
+    if (!isReload && fetchCalledRef.current) return;
+    if (!isReload) fetchCalledRef.current = true;
+
+    setIsLoadingAnalysis(true);
+    try {
+      const currentPayload = getSerializedPayload();
+      const mockPartnerData = {
+        defenseLevel: Math.max(0, currentPayload.defenseLevel - 15),
+        tempPreference: "温热",
+        rhythmPerception: Math.min(100, currentPayload.rhythmPerception + 10),
+        hiddenNeed: "接收到匹配信号",
+      };
+
+      const res = await fetch("/api/blueprint-analysis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          myPayload: currentPayload,
+          partnerData: mockPartnerData,
+          isSolo: false,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalysisData(data);
+      } else {
+        console.error("Analysis generation failed");
+      }
+    } catch (e) {
+      console.error("API error", e);
+    } finally {
+      setIsLoadingAnalysis(false);
+    }
+  }, [getSerializedPayload]);
+
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
-
-    // 发起大模型动态解读请求，使用 useRef 阻断 React Strict Mode 的重复调用
-    const fetchAnalysis = async () => {
-      if (fetchCalledRef.current) return;
-      fetchCalledRef.current = true;
-
-      try {
-        const res = await fetch("/api/blueprint-analysis", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            myPayload,
-            partnerData: mockPartnerData,
-            isSolo: false,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAnalysisData(data);
-        } else {
-          console.error("Analysis generation failed");
-        }
-      } catch (e) {
-        console.error("API error", e);
-      } finally {
-        setIsLoadingAnalysis(false);
-      }
-    };
-
     fetchAnalysis();
-
     return () => clearTimeout(timer);
-  }, []);
+  }, [fetchAnalysis]);
 
   return (
     <main className="min-h-screen bg-brand-slate-950 text-brand-slate-400 p-4 sm:p-6 lg:p-12 relative overflow-x-hidden font-mono flex flex-col items-center">
@@ -382,21 +389,33 @@ export default function BlueprintPage() {
             <div className="bg-brand-slate-900/40 border border-brand-rose-900/50 p-4 sm:p-6 rounded-sm backdrop-blur-md relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-rose-500/5 rounded-full blur-2xl pointer-events-none" />
 
-              <h2 className="text-sm text-brand-rose-400 font-bold mb-4 tracking-widest uppercase flex items-center border-b border-brand-slate-800/80 pb-2">
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <h2 className="text-sm text-brand-rose-400 font-bold mb-4 tracking-widest uppercase flex items-center justify-between border-b border-brand-slate-800/80 pb-2">
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  [ 共鸣特征提权解译：你们为何如此相似？ ]
+                </span>
+                <button
+                  onClick={() => fetchAnalysis(true)}
+                  disabled={isLoadingAnalysis}
+                  className="text-brand-rose-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="重新生成解译"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                [ 共鸣特征提权解译：你们为何如此相似？ ]
+                  <svg className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
               </h2>
 
               <div className="text-xs sm:text-sm text-brand-slate-300 leading-relaxed space-y-4">
@@ -466,27 +485,19 @@ export default function BlueprintPage() {
           />
         </div>
 
+        {/* =====================
+            A2A 实况镜像聊天 
+            (自动启动双盲身份探测)
+           ===================== */}
+        {isRendered && !isLoadingAnalysis && (
+          <BlueprintChat myPayload={myPayload} bestMatchUser={bestMatchUser ?? null} />
+        )}
+
         {/* 底部功能盘 */}
-        <footer className="pt-12 text-center space-y-4">
-          {/* <SimulationButton
-            rhythm={myPayload.rhythmPerception}
-            temp={myPayload.tempPreference}
-          />
-          <br /> */}
-          <button
-            onClick={() => router.push("/match")}
-            className="px-8 py-4 bg-brand-rose-500/10 border border-brand-rose-500 text-brand-rose-400 text-sm font-black tracking-[0.2em] relative overflow-hidden group hover:shadow-[0_0_25px_rgba(244,63,94,0.4)] transition-all glow-effect-intense"
-          >
-            <div className="absolute inset-0 bg-brand-rose-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
-            [ 尝试建立深空通信网络 ]
-          </button>
-          <div className="text-xs text-brand-slate-500 uppercase tracking-widest mt-2">
-            ⚠️ 警告：连接可能导致未知的精神共振
-          </div>
-          <br />
+        <footer className="pt-4 pb-12 text-center space-y-4 relative z-20">
           <button
             onClick={() => router.push("/")}
-            className="px-8 py-3 bg-transparent border border-brand-cyan-500/30 text-brand-cyan-600 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/5 hover:text-brand-cyan-400 transition-all mt-6"
+            className="px-8 py-3 bg-brand-slate-900 shadow-xl border border-brand-cyan-500/30 text-brand-cyan-600 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/5 hover:text-brand-cyan-400 transition-all mt-6"
           >
             [ 重启领航协议 ]
           </button>

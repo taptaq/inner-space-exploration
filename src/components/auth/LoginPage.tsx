@@ -109,7 +109,7 @@ export default function LoginPage() {
         <div className="w-16 h-px bg-gradient-to-r from-transparent via-brand-cyan-500/50 to-transparent my-6" />
 
         {/* 说明文字 */}
-        <p className="text-sm text-brand-slate-400 leading-relaxed mb-10 tracking-wide font-light max-w-xs">
+        <p className="text-sm text-brand-slate-400 leading-relaxed mb-10 tracking-wide font-bold max-w-xs">
           在这里，你将用自己的{" "}
           <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30">
             SecondMe 数字身份

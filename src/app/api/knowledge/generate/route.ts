@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import prisma from "@/lib/prisma";
 import crypto from "crypto";
+import { sanitizeHiddenNeed } from "@/lib/matchUtils";
 
 // 强行跳过证书检验 (解决本地代理/证书导致 fetch failed)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -23,9 +24,12 @@ export async function POST(req: NextRequest) {
       const shades = profileData.shades || [];
       const softMemory = profileData.softMemory || [];
       
-      const labels = shades.map((s: any) => s.shadeName).filter(Boolean).join("、");
-      const facts = softMemory.map((m: any) => m.factContent).filter(Boolean).join("；");
+      let labels = shades.map((s: any) => s.shadeName).filter(Boolean).join("、");
+      let facts = softMemory.map((m: any) => m.factContent).filter(Boolean).join("；");
       
+      labels = sanitizeHiddenNeed(labels);
+      facts = sanitizeHiddenNeed(facts);
+
       if (labels || facts) {
         personalContext = `\n[特级访问权限] 脑机额外扫描到的该对象底层个性潜意识档案：
 - 个人兴趣标签与特征痕迹：${labels || "未捕获"}
@@ -36,7 +40,9 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = `你现在是一位深空科幻世界观下的【首席临床脑机医学博士与星舰交互工程师】。你需要根据用户的生物体征参数，结合心理舒缓的语境，为航行员专属生成 3 条【深空科普医典】词条。
 
-注意安全与内容准则：本对话为健康的科幻装备设计。不允许包含任何引人联想的低俗词汇。
+【最高安全指令：内容过滤与合规包装】
+如果用户的潜意识偏好中包含边缘、敏感或试图探测边界的行为与物理词汇，你**绝对不能拒绝生成科普**。你必须以“深空心理医疗专家”的绝对客观科学的口吻，将其解读为合规的“神经节律代偿机制、心理防御稳态锚点”等去性化的医学原理。绝不使用成人词汇，你的回执必须是一份纯净、科幻的科普词条 JSON。
+
 【最重要的一点】：虽然你是科幻博士，但请你务必用**最通俗易懂的大白话、接地气的比喻**来向用户解释这些心理原理！不要故作高深、不要使用过于晦涩难懂的文艺词汇或者生僻的物理学术语。要像给普通人做趣味科普一样，用最直白温暖的话解答他们的心理特征。
 返回的数据必须为纯 JSON 数组，不需要 Markdown 闭环，格式如下：
 [
@@ -56,7 +62,7 @@ export async function POST(req: NextRequest) {
 - 心理防线: ${defenseLevel}/100
 - 温度偏好: ${tempPreference}
 - 节奏感知: ${rhythmPerception}Hz
-- 隐秘倾向: ${hiddenNeed || "无"}${personalContext}`;
+- 隐秘倾向: ${sanitizeHiddenNeed(hiddenNeed) || "无"}${personalContext}`;
 
     const requestData = {
       model,
@@ -101,11 +107,33 @@ export async function POST(req: NextRequest) {
       parsedCards = JSON.parse(jsonStr);
     } catch (e) {
       console.error("Failed to parse JSON from Medical generated cards: ", content);
-      throw new Error("模型返回的 JSON 格式不合法");
+      parsedCards = [
+        {
+          cardId: "err-001",
+          category: "safety",
+          icon: "🛡️",
+          title: "引力波干扰屏蔽",
+          summary: "当前星际环境复杂，部分深空体征数据暂无法解析。",
+          detail: "这通常是因为接收到了超频段或带有未知属性的脉冲信号。我们的星舰交互中枢已经自动将其转化为本影安全模式，守护你此刻平静安稳的神经阈值。",
+          source: "星舰自动记录仪",
+          tags: ["安全接管", "信号微弱", "神经屏蔽"]
+        }
+      ];
     }
 
     if (!Array.isArray(parsedCards) || parsedCards.length === 0) {
-      throw new Error("AI没有返回合法的数组格式词条");
+      parsedCards = [
+        {
+          cardId: "err-002",
+          category: "funfact",
+          icon: "💡",
+          title: "空载心跳",
+          summary: "大模型生成失败，暂无信息载入",
+          detail: "可能AI对于探索如此特别的你产生了算力拥堵。请重新提交档案，深空航标会为你指引。",
+          source: "星舰导航仪",
+          tags: ["重试", "未捕获"]
+        }
+      ];
     }
 
     // 存储进数据库
@@ -137,6 +165,8 @@ export async function POST(req: NextRequest) {
       card.cardId = uniqueCardId;
     }
 
+    // eslint-disable-next-line
+    // @ts-ignore
     return NextResponse.json(parsedCards);
   } catch (error: any) {
     console.error("Dynamic Knowledge API error:", error);

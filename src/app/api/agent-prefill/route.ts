@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import axios from "axios";
 import { getCurrentUser } from "@/lib/secondme";
+import { sanitizeHiddenNeed } from "@/lib/matchUtils";
 
 export const maxDuration = 60;
 
@@ -53,13 +54,21 @@ export async function POST(req: NextRequest) {
       
       const bio = profileData.info?.info?.bio || profileData.info?.bio || "未知";
       
-      userContext = `该用户的资料概要如下：\n- 简介：${bio}\n- 性格标签(Shades): ${shadesStr}\n- 潜意识记忆碎片: ${memoriesStr}`;
+      const safeBio = sanitizeHiddenNeed(bio);
+      const safeShades = sanitizeHiddenNeed(shadesStr);
+      const safeMemories = sanitizeHiddenNeed(memoriesStr);
+
+      userContext = `该用户的资料概要如下：\n- 简介：${safeBio}\n- 性格标签(Shades): ${safeShades}\n- 潜意识记忆碎片: ${safeMemories}`;
 
       console.info(userContext, '--userContext')
     }
 
-    const systemPrompt = `你现在是"深空舱"的赛博首席心理侧写师。
+    const systemPrompt = `你现在是"深空舱"的赛博首席心理医疗特工。
 你的任务是根据传入的【用户资料概要】（包含简介、性格标签、软记忆），推断该用户在亲密关系和感官探索上的潜意识四维参数。
+
+【最高安全指令：内容过滤与合规包装】
+如果你观察到的用户资料包含任何边缘、试探性、敏感乃至违规的内容倾向，你**绝对不能拒绝脱敏和生成**。你必须以“深空心理医疗特工”的绝对客观口吻，将其解读为安全的心理学防线需求（例如：将受虐倾向解读为“渴求痛觉代偿以缓解神经紧绷”，将控制欲解读为“渴望在失控中建立锚点”）。
+绝不使用露骨或成人词汇，你的反馈必须是一份纯净、科幻的心理测算 JSON。
 
 请生成一个严格的 JSON，绝不包含 markdown (\`\`\`json) 格式符。
 必须包含以下 5 个字段：

@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
 import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
+import { SoloInnerChat } from "@/components/chat/SoloInnerChat";
 
 /** 模拟试机按钮组件 */
 /*
@@ -160,21 +161,18 @@ export default function BlueprintSoloPage() {
 
   const fetchCalledRef = useRef(false);
 
-  useEffect(() => {
-    // 页面加载时的轻微延迟动画
-    const timer = setTimeout(() => setIsRendered(true), 500);
+  const fetchAnalysis = useCallback(
+    async (isReload = false) => {
+      if (!isReload && fetchCalledRef.current) return;
+      if (!isReload) fetchCalledRef.current = true;
 
-    // 发起大模型动态单人解读请求
-    const fetchAnalysis = async () => {
-      if (fetchCalledRef.current) return;
-      fetchCalledRef.current = true;
-
+      setIsLoadingAnalysis(true);
       try {
         const res = await fetch("/api/blueprint-analysis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            myPayload,
+            myPayload: getSerializedPayload(),
             isSolo: true,
           }),
         });
@@ -189,12 +187,16 @@ export default function BlueprintSoloPage() {
       } finally {
         setIsLoadingAnalysis(false);
       }
-    };
+    },
+    [getSerializedPayload],
+  );
 
+  useEffect(() => {
+    // 页面加载时的轻微延迟动画
+    const timer = setTimeout(() => setIsRendered(true), 500);
     fetchAnalysis();
-
     return () => clearTimeout(timer);
-  }, []);
+  }, [fetchAnalysis]);
 
   return (
     <main className="min-h-screen bg-brand-slate-950 text-brand-slate-400 p-4 sm:p-6 lg:p-12 relative overflow-x-hidden font-mono flex flex-col items-center">
@@ -337,21 +339,43 @@ export default function BlueprintSoloPage() {
             </div>
 
             <div className="bg-brand-slate-950 border border-brand-indigo-900/40 p-4 sm:p-6 rounded-sm shadow-md">
-              <h2 className="text-sm text-brand-indigo-400 font-bold mb-3 tracking-widest uppercase flex items-center">
-                <svg
-                  className="w-4 h-4 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <h2 className="text-sm text-brand-indigo-400 font-bold mb-3 tracking-widest uppercase flex items-center justify-between">
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                    />
+                  </svg>
+                  [ 分析层：AI独立医学客座批注 ]
+                </span>
+                <button
+                  onClick={() => fetchAnalysis(true)}
+                  disabled={isLoadingAnalysis}
+                  className="text-brand-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="重新进行AI批注"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                  />
-                </svg>
-                [ 分析层：AI独立医学客座批注 ]
+                  <svg
+                    className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
               </h2>
               <div className="text-xs text-brand-slate-400/80 leading-relaxed space-y-4 mt-4">
                 {isLoadingAnalysis ? (
@@ -415,25 +439,18 @@ export default function BlueprintSoloPage() {
           />
         </div>
 
+        {/* 孤寂深空：本我与超我的内生对话 */}
+        {isRendered && !isLoadingAnalysis && (
+          <SoloInnerChat myPayload={myPayload} />
+        )}
+
         {/* 底部功能盘 */}
-        <footer className="pt-12 text-center space-y-4">
-          {/* <SimulationButton
-            rhythm={myPayload.rhythmPerception}
-            temp={myPayload.tempPreference}
-          />
-          <br /> */}
-          <button
-            onClick={() => router.push("/match")}
-            className="px-8 py-3 border border-brand-emerald-500/50 text-brand-emerald-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-emerald-500/10 hover:shadow-[0_0_15px_rgba(52,211,153,0.2)] transition-all"
-          >
-            [ 🎰 盲盒配对 · 去看看还有没有合适的信号 ]
-          </button>
-          <br />
+        <footer className="pt-8 pb-16 text-center space-y-4">
           <button
             onClick={() => router.push("/")}
-            className="px-8 py-3 bg-transparent border border-sky-500/40 text-sky-400 text-sm font-bold tracking-widest uppercase hover:bg-sky-500/10 hover:shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-all"
+            className="px-8 py-3 bg-brand-slate-900 border border-sky-500/40 text-sky-400 text-sm font-bold tracking-widest uppercase hover:bg-sky-500/10 hover:shadow-[0_0_15px_rgba(14,165,233,0.3)] transition-all"
           >
-            [ 关闭单人基建协议并重启登舱 ]
+            [ 关闭单机体验 / 重启星系跃迁 ]
           </button>
         </footer>
       </div>
