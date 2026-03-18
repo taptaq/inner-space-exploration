@@ -35,6 +35,33 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     setIsRendered(true);
+
+    const fetchLocalPrefs = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch("/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.localPreferences) {
+            if (data.localPreferences.defenseLevel !== null)
+              setDefenseLevel(data.localPreferences.defenseLevel);
+            if (data.localPreferences.tempPreference !== null)
+              setTempPreference(data.localPreferences.tempPreference);
+            if (data.localPreferences.rhythmPerception !== null)
+              setRhythmPerception(data.localPreferences.rhythmPerception);
+            if (data.localPreferences.hiddenNeed !== null)
+              setHiddenNeed(data.localPreferences.hiddenNeed);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load local preferences:", e);
+      }
+    };
+    
+    fetchLocalPrefs();
   }, []);
 
   // 预生成背景流星与星轨游离碎片 (与首页保持沉浸感统一)
@@ -53,14 +80,34 @@ export default function OnboardingPage() {
     );
   }, []);
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
     if (isLaunching) return;
     setIsLaunching(true);
     const payload = getSerializedPayload();
     console.log(
       "[SYS_INFO] 申请脱离地心引力... 开始封存参数并对接 A2A 失重舱序列",
     );
-    // console.log("[PAYLOAD_FREEZE]", JSON.stringify(payload, null, 2));
+
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await fetch("/api/user/save-profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            defenseLevel: payload.defenseLevel,
+            tempPreference: payload.tempPreference,
+            rhythmPerception: payload.rhythmPerception,
+            hiddenNeed: payload.hiddenNeed,
+          }),
+        });
+      }
+    } catch (e) {
+      console.error("Failed to save local preferences:", e);
+    }
 
     // 拦截默认瞬跳，加入 1.5 秒心跳脉冲过渡，建立期待感
     setTimeout(() => {

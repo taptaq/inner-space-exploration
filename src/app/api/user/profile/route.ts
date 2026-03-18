@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { config, secondmeApi, getCurrentUser } from "@/lib/secondme";
+import prisma from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,11 +22,22 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 格式化输出为期望的 profileData 形式
+    // 获取本地数据库中的专属配置 (防线、温控等)
+    const localUser = await prisma.user.findUnique({
+      where: { token },
+    });
+
+    // 格式化输出为期望的 profileData 形式，并混入本地参数
     return NextResponse.json({
       info: user,
       shades: user.shades,
       softMemory: user.softMemory,
+      localPreferences: localUser ? {
+        defenseLevel: localUser.defenseLevel,
+        tempPreference: localUser.tempPreference,
+        rhythmPerception: localUser.rhythmPerception,
+        hiddenNeed: localUser.hiddenNeed,
+      } : null
     });
   } catch (error: any) {
     console.error("Profile API error:", error);

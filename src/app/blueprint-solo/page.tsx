@@ -243,7 +243,7 @@ export default function BlueprintSoloPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.05)_0%,transparent_70%)] mix-blend-screen" />
       </div>
 
-      <div className="w-full max-w-5xl z-10 space-y-8 mt-10 sm:mt-0">
+      <div className="w-full max-w-md mx-auto z-10 space-y-8 mt-10 sm:mt-0">
         {/* 单人专属头部摘要 */}
         <header className="border-l-4 border-sky-400 pl-4 sm:pl-6 py-3 relative z-10 bg-brand-slate-950/60 backdrop-blur-md -ml-4 pr-4 sm:ml-0 shadow-sm rounded-r-md">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-widest uppercase mb-2 drop-shadow-lg flex items-center">
@@ -258,7 +258,7 @@ export default function BlueprintSoloPage() {
 
         {/* 核心内容网格 */}
         <div
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-8 transition-opacity duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
+          className={`grid grid-cols-1 gap-8 transition-opacity duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
         >
           {/* 左侧：具象化绝对安全边界极坐标图 */}
           <section className="bg-brand-slate-900/50 border border-sky-900/40 rounded-sm p-4 sm:p-6 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)]">

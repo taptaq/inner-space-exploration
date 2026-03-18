@@ -264,7 +264,7 @@ export default function BlueprintPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.05)_0%,transparent_60%)] mix-blend-screen" />
       </div>
 
-      <div className="w-full max-w-5xl z-10 space-y-8 mt-10 sm:mt-0">
+      <div className="w-full max-w-md mx-auto z-10 space-y-8 mt-10 sm:mt-0">
         {/* 头部摘要: 神秘信号拦截 */}
         <header className="border-l-4 border-brand-rose-500 pl-4 sm:pl-6 py-2 relative z-10 bg-brand-slate-950/40 backdrop-blur-sm -ml-4 pr-4 sm:ml-0 shadow-sm rounded-r-md">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-rose-400 tracking-widest uppercase mb-2 drop-shadow-lg flex items-center gap-2 animate-pulse">
@@ -318,7 +318,7 @@ export default function BlueprintPage() {
 
         {/* 核心内容网格 */}
         <div
-          className={`grid grid-cols-1 lg:grid-cols-2 gap-8 transition-opacity duration-1000 ${isRendered ? "opacity-100" : "opacity-0"}`}
+          className={`grid grid-cols-1 gap-8 transition-opacity duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
         >
           {/* 左侧：雷达图表区 */}
           <section className="bg-brand-slate-900/50 border border-brand-cyan-900/30 rounded-sm p-4 sm:p-6 relative">

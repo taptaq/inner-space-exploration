@@ -291,7 +291,7 @@ export default function MatchPage() {
         ))}
       </div>
 
-      <div className="relative z-10 max-w-2xl mx-auto px-4 py-6 min-h-screen flex flex-col">
+      <div className="relative z-10 max-w-md mx-auto px-4 py-6 min-h-screen flex flex-col">
         {/* 返回按钮 */}
         <button
           onClick={() => {
@@ -432,7 +432,7 @@ export default function MatchPage() {
 
         {/* ═══ 阶段二.五：候补选择 (匹配失败) ═══ */}
         {phase === "selection" && (
-          <div className="flex-1 flex flex-col items-center justify-center animate-[fadeIn_0.5s_ease-out] w-full max-w-2xl mx-auto">
+          <div className="flex-1 flex flex-col items-center justify-center animate-[fadeIn_0.5s_ease-out] w-full max-w-md mx-auto">
             <div className="mb-6 text-center">
               <span className="text-4xl mb-4 block animate-pulse">📡</span>
               <h2 className="text-xl font-black text-brand-rose-400 tracking-widest uppercase mb-2">

@@ -370,13 +370,12 @@ export default function ScenarioPage() {
       <div className="absolute top-6 right-6 z-50 text-xs text-brand-slate-500 tracking-widest">
         [ {currentIndex + 1} / {scenarios.length} ]
       </div>
-
-      {/* 核心问答区 */}
-      <div
-        className={`relative z-10 max-w-2xl w-full flex flex-col items-center text-center transition-all duration-700
-        ${isTransitioning ? "opacity-0 scale-95 -translate-y-4" : "opacity-100 scale-100 translate-y-0"}
-        ${isRendered ? "" : "opacity-0"}`}
-      >
+      <div className="flex-1 flex flex-col items-center justify-center pt-24 pb-32">
+        <div
+          className={`relative z-10 max-w-md w-full flex flex-col items-center text-center transition-all duration-700
+            ${isTransitioning ? "opacity-0 blur-md scale-95 translate-y-8" : "opacity-100 blur-0 scale-100 translate-y-0"}
+            ${isRendered ? "" : "opacity-0"}`}
+        >
         {/* 情境描述 */}
         <div className="mb-6 sm:mb-8 px-4">
           <p className="text-lg sm:text-xl md:text-2xl text-brand-slate-300 leading-relaxed font-light tracking-wide">
@@ -515,6 +514,7 @@ export default function ScenarioPage() {
         <p className="mt-10 text-xs text-brand-slate-600 tracking-widest animate-pulse">
           {currentScenario.isTextInput ? "[ 探寻内心深处的渴望 ]" : "[ 凭你的第一直觉选择 ]"}
         </p>
+      </div>
       </div>
 
       {/* 转场科普浮层 */}
