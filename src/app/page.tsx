@@ -14,7 +14,7 @@ export default function Home() {
     setIsRendered(true);
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");
-    
+
     setIsLoggedIn(!!token);
     if (userStr) {
       try {
@@ -23,7 +23,7 @@ export default function Home() {
         // silent catch
       }
     }
-    
+
     setIsChecking(false);
   }, []);
 
@@ -39,7 +39,7 @@ export default function Home() {
         left: Math.random() * 100,
         duration: Math.random() * 10 + 10,
         delay: Math.random() * 5,
-      }))
+      })),
     );
   }, []);
 
@@ -192,15 +192,25 @@ export default function Home() {
         {currentUser && (
           <div className="mt-8 flex items-center gap-3 bg-brand-slate-900/60 border border-brand-slate-700/50 px-4 py-2 rounded-full backdrop-blur-md z-30 transition-all hover:bg-brand-slate-800/80 hover:border-brand-cyan-500/50 shadow-lg">
             {currentUser.avatar ? (
-              <img src={currentUser.avatar} alt="Avatar" className="w-9 h-9 rounded-full border border-brand-slate-700 object-cover" />
+              <img
+                src={currentUser.avatar}
+                alt="Avatar"
+                className="w-9 h-9 rounded-full border border-brand-slate-700 object-cover"
+              />
             ) : (
               <div className="w-9 h-9 rounded-full bg-brand-slate-800 border border-brand-slate-700 flex items-center justify-center">
-                <span className="text-brand-cyan-400 text-xs font-bold w-full text-center leading-[2rem]">?</span>
+                <span className="text-brand-cyan-400 text-xs font-bold w-full text-center leading-[2rem]">
+                  ?
+                </span>
               </div>
             )}
             <div className="flex flex-col pr-3">
-              <span className="text-brand-slate-200 text-xs font-bold tracking-wide">{currentUser.name || currentUser.email}</span>
-              <span className="text-brand-cyan-500 text-[9px] uppercase tracking-widest leading-none mt-1">已连接 SecondMe 主脑</span>
+              <span className="text-brand-slate-200 text-xs font-bold tracking-wide">
+                {currentUser.name || currentUser.email}
+              </span>
+              <span className="text-brand-cyan-500 text-[9px] uppercase tracking-widest leading-none mt-1">
+                已连接 SecondMe 主脑
+              </span>
             </div>
             {/* 极小退出按钮 */}
             <button
@@ -212,13 +222,22 @@ export default function Home() {
               className="ml-2 w-6 h-6 rounded-full bg-brand-slate-800 hover:bg-brand-red-500/20 text-brand-slate-500 hover:text-brand-red-400 flex items-center justify-center transition-colors"
               title="断开连接"
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
               </svg>
             </button>
           </div>
         )}
-
       </div>
 
       {/* 底部装饰工程参数 */}

@@ -32,6 +32,9 @@ export default function OnboardingPage() {
 
   const [isRendered, setIsRendered] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [aiReasoning, setAiReasoning] = useState("");
 
   useEffect(() => {
     setIsRendered(true);
@@ -39,30 +42,40 @@ export default function OnboardingPage() {
     const fetchLocalPrefs = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
+        if (!token) {
+          setIsInitialLoading(false);
+          return;
+        }
         const res = await fetch("/api/user/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          router.push("/");
+          return;
+        }
         if (res.ok) {
           const data = await res.json();
           if (data.localPreferences) {
-            if (data.localPreferences.defenseLevel !== null)
+            if (data.localPreferences.defenseLevel != null)
               setDefenseLevel(data.localPreferences.defenseLevel);
-            if (data.localPreferences.tempPreference !== null)
+            if (data.localPreferences.tempPreference != null)
               setTempPreference(data.localPreferences.tempPreference);
-            if (data.localPreferences.rhythmPerception !== null)
+            if (data.localPreferences.rhythmPerception != null)
               setRhythmPerception(data.localPreferences.rhythmPerception);
-            if (data.localPreferences.hiddenNeed !== null)
+            if (data.localPreferences.hiddenNeed != null)
               setHiddenNeed(data.localPreferences.hiddenNeed);
           }
         }
       } catch (e) {
         console.error("Failed to load local preferences:", e);
+      } finally {
+        setIsInitialLoading(false);
       }
     };
-    
+
     fetchLocalPrefs();
-  }, []);
+  }, [router, setDefenseLevel, setTempPreference, setRhythmPerception, setHiddenNeed]);
 
   // 预生成背景流星与星轨游离碎片 (与首页保持沉浸感统一)
   const [particles, setParticles] = useState<any[]>([]);
@@ -115,13 +128,64 @@ export default function OnboardingPage() {
     }, 1500);
   };
 
-  const handleRandomize = () => {
-    const randomTemp =
-      TEMP_OPTIONS[Math.floor(Math.random() * TEMP_OPTIONS.length)].value;
-    setDefenseLevel(Math.floor(Math.random() * 100));
-    setTempPreference(randomTemp);
-    setRhythmPerception(Math.floor(Math.random() * 90) + 10);
-    setHiddenNeed("被随机引力波击中的未知诉求...");
+  const handleAgentPrefill = async () => {
+    if (isScanning || isLaunching) return;
+    setIsScanning(true);
+    setAiReasoning("Agent 代理正在潜入你的 SecondMe 档案数据流...");
+
+    try {
+      let { profileData } = useAgentStore.getState();
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      // 优先确保从数据库拉取一次 profileData
+      if (token) {
+        try {
+          const profileRes = await fetch("/api/user/profile", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.status === 401) {
+            localStorage.removeItem("token");
+            router.push("/");
+            return;
+          }
+          if (profileRes.ok) {
+            const data = await profileRes.json();
+            profileData = data;
+            useAgentStore.setState({ profileData });
+          }
+        } catch (err) {
+          console.warn("Failed to fetch user profile before prefill:", err);
+        }
+      }
+
+      const res = await fetch("/api/agent-prefill", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ profileData }),
+      });
+
+      if (!res.ok) throw new Error("Agent Scan Failed");
+
+      const data = await res.json();
+
+      // Update sliders
+      setDefenseLevel(data.defenseLevel || 50);
+      setTempPreference(data.tempPreference || "恒温");
+      setRhythmPerception(data.rhythmPerception || 50);
+      setHiddenNeed(data.hiddenNeed || "");
+
+      // Display the typewriter reasoning
+      setAiReasoning(`[Agent 侧写完毕]：${data.reasoning}`);
+    } catch (e) {
+      console.error(e);
+      setAiReasoning("[Agent 报错]：连接星际档案库失败。请手动调整参数。");
+    } finally {
+      setIsScanning(false);
+    }
   };
 
   return (
@@ -191,36 +255,54 @@ export default function OnboardingPage() {
       </header>
 
       {/* 控制台表单区域 */}
-      <div
-        className={`z-10 w-full max-w-2xl flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered ? "opacity-100" : "opacity-0"}`}
-      >
-        {/* 一键盲盒：最高优先级快捷操作 */}
-        <button
-          onClick={handleRandomize}
-          className="group relative w-full overflow-hidden rounded-md border border-brand-cyan-500/50 hover:border-brand-emerald-400 bg-brand-cyan-950/30 hover:bg-brand-emerald-900/20 px-4 py-4 sm:py-5 flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(6,182,212,0.1)] hover:shadow-[0_4px_30px_rgba(52,211,153,0.2)]"
+      {isInitialLoading ? (
+        <div className="z-10 w-full max-w-2xl flex flex-col items-center justify-center py-24 min-h-[400px]">
+          <div className="relative w-16 h-16 mb-6">
+            <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full animate-ping" />
+            <div className="absolute inset-0 border-4 border-t-brand-emerald-400 border-r-transparent rounded-full animate-spin" />
+            <div className="absolute inset-2 border-4 border-b-brand-cyan-400 border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite_reverse]" />
+          </div>
+          <p className="text-brand-cyan-400 text-sm tracking-[0.2em] uppercase font-bold animate-pulse">
+            [ 正在从深空潜意识网络同步您的最新档案... ]
+          </p>
+        </div>
+      ) : (
+        <div
+          className={`z-10 w-full max-w-2xl flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0"}`}
         >
-          {/* 扫光背景特效 */}
-          <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-brand-cyan-400/10 to-transparent -translate-x-full group-hover:animate-[slide_2s_ease-in-out_infinite]" />
-
+        {/* Agent 智能档案初筛 */}
+        <button
+          onClick={handleAgentPrefill}
+          disabled={isScanning || isLaunching}
+          className={`group relative w-full overflow-hidden rounded-md border px-4 py-4 sm:py-5 flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(16,185,129,0.1)] hover:shadow-[0_4px_30px_rgba(16,185,129,0.2)] 
+            ${isScanning ? "border-brand-emerald-400 bg-brand-emerald-950/40 cursor-wait" : "border-brand-emerald-500/50 hover:border-brand-emerald-400 bg-brand-emerald-950/20"}`}
+        >
+          <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-brand-emerald-400/10 to-transparent -translate-x-full group-hover:animate-[slide_2s_ease-in-out_infinite]" />
           <div className="relative flex items-center space-x-3">
-            <svg
-              className="w-5 h-5 text-brand-cyan-400 group-hover:text-brand-emerald-400 transition-colors"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-            <span className="font-bold tracking-[0.2em] text-sm sm:text-base text-brand-cyan-300 group-hover:text-brand-emerald-300 transition-colors uppercase">
-              脑机直联 // 一键随机注入潜意识
+            {isScanning ? (
+              <span className="text-2xl animate-spin text-brand-emerald-400">
+                👁️
+              </span>
+            ) : (
+              <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">
+                👁️
+              </span>
+            )}
+            <span className="font-bold tracking-[0.2em] text-sm sm:text-base text-brand-emerald-400 group-hover:text-brand-emerald-300 transition-colors uppercase">
+              {isScanning
+                ? "[ 正在深度链接潜意识... ]"
+                : "Agent 深空档案侧写 // 一键智能注入"}
             </span>
           </div>
         </button>
+
+        {aiReasoning && (
+          <div className="w-full bg-brand-emerald-950/20 border-l-2 border-brand-emerald-500 p-4 rounded-r-md animate-[fadeIn_0.5s_ease-out]">
+            <p className="text-brand-emerald-400/90 text-sm font-mono italic leading-relaxed whitespace-pre-wrap">
+              {aiReasoning}
+            </p>
+          </div>
+        )}
 
         {/* 参数板块：心理防线 */}
         <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 rounded shadow-lg backdrop-blur-md">
@@ -278,11 +360,13 @@ export default function OnboardingPage() {
           </div>
         </section>
       </div>
+      )}
 
       {/* 底部启动防线动作栏 */}
-      <footer
-        className={`z-10 w-full max-w-2xl mt-12 pb-8 flex flex-col md:flex-row items-center justify-between transition-all duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
-      >
+      {!isInitialLoading && (
+        <footer
+          className={`z-10 w-full max-w-2xl mt-12 pb-8 flex flex-col md:flex-row items-center justify-between transition-all duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
+        >
         <div className="text-xs text-brand-slate-400/60 mb-6 md:mb-0 flex-1">
           <p className="font-bold text-brand-rose-500/80 mb-1">
             【系统自检无异常】
@@ -339,6 +423,7 @@ export default function OnboardingPage() {
           </span>
         </button>
       </footer>
+      )}
     </main>
   );
 }

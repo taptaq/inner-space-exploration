@@ -65,6 +65,12 @@ export default function ObservatoryPage() {
             fetch("/api/user/discover", { headers: { Authorization: `Bearer ${token}` } })
           ]);
           
+          if (profileRes.status === 401 || discoverRes.status === 401) {
+            localStorage.removeItem("token");
+            router.push("/");
+            return;
+          }
+          
           const profileData = await profileRes.json();
           const discoverData = await discoverRes.json();
           
@@ -152,9 +158,10 @@ export default function ObservatoryPage() {
             }
             });
         } else {
-            bestScore = calculateCompatibility(myPayload, generatePartnerParams(myPayload));
-            success = bestScore >= 85;
-            matchReason = "深空漫随机相遇协议";
+            bestMatch = null;
+            bestScore = 0;
+            success = false;
+            matchReason = "当前星域没有活跃的适合航行者，请邀请更多人加入深空探测。";
         }
       }
 
@@ -188,7 +195,7 @@ export default function ObservatoryPage() {
       } else {
         dynamicLogs.push(
           { text: "节点博弈(0x3C): 星轨极性不合... 匹配失败", delay: 10000 },
-          { text: "深空网桥(): 没有任何异星灵魂形成高频共鸣", delay: 11500 },
+          { text: `深空网桥(): ${reason || "没有任何异星灵魂形成高频共鸣"}`, delay: 11500 },
           { text: "单人独立判定(WARN): 转为单机协议，生成《专属内太空基建蓝图》", delay: 13500 }
         );
       }

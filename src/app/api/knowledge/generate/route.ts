@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       await req.json();
 
     const apiKey = process.env.MINIMAX_API_KEY;
-    const model = process.env.MINIMAX_MODEL || "MiniMax-Text-01";
+    const model = process.env.MINIMAX_MODEL || "MiniMax-M2.5-highspeed";
 
     if (!apiKey || apiKey === "your_key_here") {
       throw new Error("Minimax API Key 未配置");
@@ -94,9 +94,10 @@ export async function POST(req: NextRequest) {
     let parsedCards: any[] = [];
     
     try {
-      // 提取可能的 JSON 块
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : content;
+      // 从可能带有 markdown ```json ... ``` 的回复中提取 JSON
+      const jsonMatch = content.match(/\[[\s\S]*\]/) || content.match(/\{[\s\S]*\}/);
+      let jsonStr = jsonMatch ? jsonMatch[0] : content;
+      jsonStr = jsonStr.replace(/```json/gi, "").replace(/```/g, "").trim();
       parsedCards = JSON.parse(jsonStr);
     } catch (e) {
       console.error("Failed to parse JSON from Medical generated cards: ", content);

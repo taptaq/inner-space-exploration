@@ -10,14 +10,13 @@ import {
   calculateCompatibility,
 } from "@/lib/matchUtils";
 import { AgentPayload, ProfileData, RecommendedUser } from "@/types/agent";
-import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 interface ChatMessage {
   role: "self" | "partner";
   content: string;
 }
 
-const TOTAL_ROUNDS = 8;
+const TOTAL_ROUNDS = 6;
 
 export default function MatchPage() {
   const router = useRouter();
@@ -42,11 +41,14 @@ export default function MatchPage() {
   const [currentRound, setCurrentRound] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [typingRole, setTypingRole] = useState<"self" | "partner">("self");
+  const [isTakingOver, setIsTakingOver] = useState(false);
   const [displayedText, setDisplayedText] = useState("");
   const chatEndRef = useRef<HTMLDivElement>(null);
   const chatAbortRef = useRef(false);
+  const hasStartedChatRef = useRef(false);
   const selfSessionIdRef = useRef<string | null>(null);
   const partnerSessionIdRef = useRef<string | null>(null);
+  const hasInjectedZhihuRef = useRef(false);
 
   const myPayload = getSerializedPayload();
 
@@ -123,14 +125,35 @@ export default function MatchPage() {
         ? selfSessionIdRef.current
         : partnerSessionIdRef.current;
 
-      // 首次会话分配性格设定
-      let systemPrompt;
-      if (!currentSessionId) {
-        systemPrompt = buildSystemPrompt(
-          selfPersona,
-          partnerPersona,
-          speakingRole,
-        );
+      // 每次会话都必须带有性格设定，因为后端是无状态单次调用
+      const systemPrompt = buildSystemPrompt(
+        selfPersona,
+        partnerPersona,
+        speakingRole,
+      );
+
+      // ==========================
+      // 知乎场景深度注入 (A2A Highlights)
+      // 在第 3 轮，由“本机 Agent”自主搜索一个知乎话题并抛出
+      // ==========================
+      let injectedZhihuTopic = "";
+      if (isSelf && messages.length >= 4 && !hasInjectedZhihuRef.current) {
+        hasInjectedZhihuRef.current = true;
+        try {
+          // 根据宿主软肋或对方防备值动态生成搜索词
+          const query = myPayload.hiddenNeed?.slice(0, 10) || "亲密关系 试探";
+          const zRes = await fetch(
+            `/api/zhihu/search?query=${encodeURIComponent(query)}&count=3`,
+          );
+          const zData = await zRes.json();
+          if (zData?.data?.length > 0) {
+            const item = zData.data[0];
+            injectedZhihuTopic =
+              item.target?.title || item.title || item.object?.title || "";
+          }
+        } catch (e) {
+          console.error("Agent Zhihu Injection Failed:", e);
+        }
       }
 
       // 我们喂给当前角色的 Prompt Message，是“另一个人刚才说的话”。
@@ -141,7 +164,11 @@ export default function MatchPage() {
           ? "（系统事件：深空舱门已开启，你们的心智频段已配对。请遵守你的人设，以一句符合你风格的话打破沉默，开启你们的会话。请直接输出你打算说的话，字数简练，不用加任何解析说明。）"
           : "（系统事件：对方进入了你的频段，但似乎在等待你的声音。请你率先开启话题。）";
       } else {
-        messageToSend = `[对方刚才抛出的讯息]: "${lastPartnerMessage}"\n(请根据你的人设特点，简练回应。不要加上名字前缀，像真实聊天一样输出你的回话即可。)`;
+        messageToSend = `[对方刚才抛出的讯息]: "${lastPartnerMessage}"\n(请根据你的人设特点，简练回应。不要加上名字前缀，真实输出。)\n`;
+
+        if (injectedZhihuTopic) {
+          messageToSend += `\n【核心指令突发覆盖 / 本机 Agent 潜意识暴走】：你在引力网(知乎)上突然看到了一个热门话题叫做《${injectedZhihuTopic}》。现在，请你在回复对方的话语中，刻意且自然地引用或抛出这个知乎话题，试图用来试探对方对此的反应和底层价值观！必须提及！`;
+        }
       }
 
       try {
@@ -184,6 +211,25 @@ export default function MatchPage() {
     [myPayload, partnerParams],
   );
 
+  // Agent 推理日志库
+  const getRandomReasoningLog = useCallback((role: "self" | "partner") => {
+    const logs =
+      role === "self"
+        ? [
+            "[Agent 正在调取宿主心智图谱...]",
+            "[Agent 正在分析目标防御机制...]",
+            "[Agent 试图寻找兴趣重载点...]",
+            "[Agent 正在构建语义共振域...]",
+          ]
+        : [
+            "[目标 Agent 识别到了你的试探...]",
+            "[目标 Agent 正在比对行为模型...]",
+            "[目标 Agent 正在重组表达神经元...]",
+            "[目标 Agent 启动了同理心代偿...]",
+          ];
+    return logs[Math.floor(Math.random() * logs.length)];
+  }, []);
+
   // 打字机效果
   const typewriterDisplay = useCallback(
     async (text: string, role: "self" | "partner"): Promise<void> => {
@@ -193,10 +239,13 @@ export default function MatchPage() {
 
       for (let i = 0; i < text.length; i++) {
         if (chatAbortRef.current) break;
-        await new Promise((r) => setTimeout(r, 40 + Math.random() * 30));
+        // Faster typing for Agents, since they're machines
+        await new Promise((r) => setTimeout(r, 20 + Math.random() * 20));
         setDisplayedText(text.slice(0, i + 1));
       }
 
+      // 略微停顿，让用户看清最后一刻打完的字
+      await new Promise((r) => setTimeout(r, 400));
       setIsTyping(false);
       setDisplayedText("");
     },
@@ -205,7 +254,8 @@ export default function MatchPage() {
 
   // 阶段三：自动对话循环
   const startConversation = useCallback(async () => {
-    if (!partnerParams) return;
+    if (!partnerParams || hasStartedChatRef.current) return;
+    hasStartedChatRef.current = true;
     setPhase("chatting");
     chatAbortRef.current = false;
 
@@ -220,34 +270,39 @@ export default function MatchPage() {
         round % 2 === 0 ? "self" : "partner";
       setCurrentRound(round + 1);
 
-      // "正在输入" 停顿
+      // "开始生成"前的停顿 (推理等待期)
       setIsTyping(true);
       setTypingRole(speakingRole);
-      setDisplayedText("");
-      await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1000));
+      setDisplayedText(""); // Clear text to show reasoning logs first
+      await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
 
       if (chatAbortRef.current) break;
 
-      // 调用 AI
-      const content = await generateMessage(speakingRole, lastMessageContent);
+      // 调用 AI 请求 (如果是第一句话，强行写死以确保对话不跑偏)
+      let content;
+      if (round === 0) {
+        content =
+          "（建立连接中...）终于找到你的频段了。这片深空中太安静了，你...也一直在找同一个频率的人吗？";
+      } else {
+        content = await generateMessage(speakingRole, lastMessageContent);
+      }
 
       if (chatAbortRef.current) break;
 
-      // 保存这段话交给下一个人当作发送消息
+      // 保存这段话交给下一个人当作输入
       lastMessageContent = content;
 
-      // 打字机显示
+      // 打字机显示真实文本 (覆盖掉正在推理的动画)
       await typewriterDisplay(content, speakingRole);
 
       if (chatAbortRef.current) break;
 
-      // 添加到历史
-      const newMsg: ChatMessage = { role: speakingRole, content };
-      chatHistory.push(newMsg);
+      // 打字结束后，立即将完整的消息推入数组，触发气泡渲染
+      chatHistory.push({ role: speakingRole, content });
       setMessages([...chatHistory]);
 
-      // 间隔停顿
-      await new Promise((r) => setTimeout(r, 800 + Math.random() * 700));
+      // 消息发完后自然等待几秒钟再进入下一轮，模拟真实吸收信息的时间
+      await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
     }
 
     setPhase("done");
@@ -262,7 +317,7 @@ export default function MatchPage() {
 
   // 动态解密进度
   const isFullyUnlocked = phase === "done";
-  // 满进度（8轮对话完之前）最高显示到 88%，营造最后一下突然解锁的期待感
+  // 满进度（6轮对话完之前）最高显示到 88%
   const unlockProgress = isFullyUnlocked
     ? 100
     : Math.min(88, Math.round((messages.length / TOTAL_ROUNDS) * 88));
@@ -553,20 +608,20 @@ export default function MatchPage() {
                   className={`flex ${msg.role === "self" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed animate-[fadeIn_0.3s_ease-out] relative ${
+                    className={`max-w-[85%] sm:max-w-[75%] rounded-lg px-4 sm:px-5 py-3 text-sm sm:text-base leading-relaxed animate-[fadeIn_0.3s_ease-out] relative ${
                       msg.role === "self"
-                        ? "bg-brand-cyan-950/40 border border-brand-cyan-800/30 text-brand-slate-300"
-                        : "bg-brand-rose-950/20 border border-brand-rose-900/30 text-brand-rose-200/90"
+                        ? "bg-brand-cyan-950/40 border border-brand-cyan-500/30 text-brand-cyan-100 shadow-[0_0_15px_rgba(6,182,212,0.15)] rounded-tr-none"
+                        : "bg-brand-slate-900/60 border border-brand-emerald-500/20 text-brand-slate-300 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-tl-none"
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold tracking-wider block mb-1 opacity-50 ${msg.role === "self" ? "text-right" : "text-left"}`}
+                      className={`text-[10px] font-bold tracking-wider block mb-2 opacity-70 uppercase ${msg.role === "self" ? "text-right text-brand-cyan-400" : "text-left text-brand-emerald-400"}`}
                     >
                       {msg.role === "self"
-                        ? "本我 🧑‍🚀"
-                        : `👽 ${isFullyUnlocked ? partnerParams?.recommendedPartner?.username : maskedPartnerName}`}
+                        ? "[ 本机 Agent 代理 ]"
+                        : "[ 目标 Agent 代理 ]"}
                     </span>
-                    {msg.content}
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
                   </div>
                 </div>
               ))}
@@ -577,23 +632,30 @@ export default function MatchPage() {
                   className={`flex ${typingRole === "self" ? "justify-start" : "justify-end"}`}
                 >
                   <div
-                    className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed ${
+                    className={`max-w-[85%] sm:max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed ${
                       typingRole === "self"
-                        ? "bg-brand-cyan-950/40 border border-brand-cyan-800/30 text-brand-slate-300"
-                        : "bg-brand-rose-950/20 border border-brand-rose-900/30 text-brand-rose-200/90"
+                        ? "bg-brand-cyan-950/20 border border-brand-cyan-500/30 text-brand-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.1)] rounded-tr-none"
+                        : "bg-brand-slate-900/40 border border-brand-emerald-500/30 text-brand-emerald-500 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-tl-none"
                     }`}
                   >
                     <span
-                      className={`text-[10px] font-bold tracking-wider block mb-1 opacity-50 ${typingRole === "self" ? "text-right" : "text-left"}`}
+                      className={`text-[10px] font-bold tracking-wider block mb-1 opacity-50 uppercase ${typingRole === "self" ? "text-right" : "text-left"}`}
                     >
                       {typingRole === "self"
-                        ? "本我 🧑‍🚀"
-                        : `👽 ${isFullyUnlocked ? partnerParams?.recommendedPartner?.username : maskedPartnerName}`}
+                        ? "[ 本机 Agent 执行中 ]"
+                        : "[ 目标 Agent 响应中 ]"}
                     </span>
-                    {displayedText || (
-                      <span className="animate-pulse text-brand-slate-500">
-                        正在输入...
-                      </span>
+                    {/* 如果正在打印文字就显示打字效果，否则显示推理日志 */}
+                    {displayedText ? (
+                      <>
+                        {displayedText}
+                        <span className="inline-block w-1.5 h-3 ml-1 bg-current animate-pulse align-middle" />
+                      </>
+                    ) : (
+                      <div className="font-mono text-xs flex gap-1 items-center opacity-80 animate-pulse">
+                        <span>{getRandomReasoningLog(typingRole)}</span>
+                        <span className="w-1.5 h-3 bg-current block" />
+                      </div>
                     )}
                   </div>
                 </div>
@@ -601,69 +663,100 @@ export default function MatchPage() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* 对话结束 - 终极身份解密 */}
+            {/* 对话结束 - 终极身份解密 (H2H Handover) */}
             {phase === "done" && (
               <div className="mt-4 pt-6 border-t border-brand-slate-800 text-center space-y-6 animate-[fadeIn_0.5s_ease-out]">
-                <div className="bg-brand-slate-900/80 border border-brand-emerald-500/50 rounded-lg p-6 relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                  <div className="absolute inset-0 bg-brand-emerald-400/5 animate-pulse mix-blend-screen" />
-                  <h3 className="text-xl text-brand-emerald-400 font-black tracking-widest uppercase mb-4 animate-[fadeInTop_0.5s_ease-out]">
-                    🔒 深空链接永久锚定：档案完全解锁
-                  </h3>
+                <div
+                  className={`transition-all duration-700 ${isTakingOver ? "scale-105" : "scale-100"}`}
+                >
+                  <div
+                    className={`bg-brand-slate-900/80 border overflow-hidden rounded-lg p-6 relative shadow-[0_0_30px_rgba(16,185,129,0.1)] transition-colors duration-700
+                    ${isTakingOver ? "border-brand-emerald-400 bg-brand-emerald-950/40" : "border-brand-emerald-500/50"}
+                  `}
+                  >
+                    <div className="absolute inset-0 bg-brand-emerald-400/5 animate-pulse mix-blend-screen pointer-events-none" />
+                    <div className="relative z-10">
+                      <h3 className="text-lg md:text-xl text-brand-emerald-400 font-black tracking-widest uppercase mb-4 animate-[fadeInTop_0.5s_ease-out]">
+                        {isTakingOver
+                          ? "🟢 真人直连通道已建立"
+                          : "🔒 Agent 观测完毕：档案完全解锁"}
+                      </h3>
 
-                  {partnerParams?.recommendedPartner ? (
-                    <div className="text-left bg-brand-slate-950/50 p-4 rounded-md border border-brand-slate-700">
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="w-16 h-16 rounded-full bg-brand-slate-800 border-2 border-brand-emerald-400 flex items-center justify-center text-2xl overflow-hidden shrink-0">
-                          👽
-                        </div>
-                        <div>
-                          <h4 className="text-lg font-bold text-white mb-1">
-                            {partnerParams.recommendedPartner.username}
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-brand-cyan-400">
-                              {partnerParams.recommendedPartner.title ||
-                                "神秘领航员"}
-                            </p>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-emerald-900/50 text-brand-emerald-400 border border-brand-emerald-500/30">
-                              灵魂契合度: {compatibility}%
-                            </span>
+                    {partnerParams?.recommendedPartner ? (
+                      <div className="text-left bg-brand-slate-950/50 p-4 rounded-md border border-brand-slate-700">
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-16 h-16 rounded-full bg-brand-slate-800 border-2 border-brand-emerald-400 flex items-center justify-center text-2xl overflow-hidden shrink-0">
+                            👽
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-white mb-1">
+                              {partnerParams.recommendedPartner.username}
+                            </h4>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-brand-cyan-400">
+                                {partnerParams.recommendedPartner.title ||
+                                  "神秘领航员"}
+                              </p>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-emerald-900/50 text-brand-emerald-400 border border-brand-emerald-500/30">
+                                灵魂契合度: {compatibility}%
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="space-y-3 mt-4">
-                        {partnerParams.recommendedPartner.hook && (
-                          <div className="text-sm text-brand-slate-300 italic border-l-2 border-brand-emerald-500/50 pl-3">
-                            "{partnerParams.recommendedPartner.hook}"
-                          </div>
-                        )}
-                        <p className="text-xs text-brand-slate-400 leading-relaxed">
-                          {partnerParams.recommendedPartner.briefIntroduction ||
-                            "该用户没有留下太多过往日志，但你们的共振证明了一切。"}
-                        </p>
-                      </div>
+                        <div className="space-y-3 mt-4">
+                          {partnerParams.recommendedPartner.hook && (
+                            <div className="text-sm text-brand-slate-300 italic border-l-2 border-brand-emerald-500/50 pl-3">
+                              "{partnerParams.recommendedPartner.hook}"
+                            </div>
+                          )}
+                          <p className="text-xs text-brand-slate-400 leading-relaxed">
+                            {partnerParams.recommendedPartner
+                              .briefIntroduction ||
+                              "两级 Agent 的观测报告指出，你们的底层神经元展现出了惊人的共振频率。"}
+                          </p>
+                        </div>
 
-                      <div className="mt-4 pt-4 border-t border-brand-slate-800 flex justify-end">
-                        <a
-                          href={`https://second-me.cn/${partnerParams.recommendedPartner.route}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-6 py-2.5 bg-brand-emerald-600/20 border border-brand-emerald-500/50 text-brand-emerald-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-emerald-500 hover:text-brand-slate-900 transition-all rounded-sm flex items-center gap-2"
-                        >
-                          [ 开启舱门，登陆 Ta 的主页 ]
-                        </a>
+                        <div className="mt-6 pt-4 border-t border-brand-slate-800 flex flex-col items-center gap-4">
+                          {!isTakingOver ? (
+                            <>
+                              <p className="text-[10px] text-brand-slate-500 italic">
+                                "Agent 代理已退下，前方为真实星域..."
+                              </p>
+                              <button
+                                onClick={() => setIsTakingOver(true)}
+                                className="w-full sm:w-auto px-8 py-3 bg-brand-emerald-600/10 border-2 border-brand-emerald-500 text-brand-emerald-400 text-sm font-black tracking-widest uppercase hover:bg-brand-emerald-500 hover:text-brand-slate-950 transition-all rounded-md shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] animate-pulse hover:animate-none"
+                              >
+                                [ 接管通讯 / 建立真人直连 ]
+                              </button>
+                            </>
+                          ) : (
+                            <div className="w-full flex flex-col items-center gap-4 animate-[fadeIn_0.5s_ease-out]">
+                              <div className="flex items-center gap-3 text-brand-emerald-400 mb-2">
+                                <span className="w-2 h-2 rounded-full bg-brand-emerald-400 animate-ping" />
+                                <span className="text-xs font-bold tracking-widest uppercase">
+                                  已成功接管频段
+                                </span>
+                              </div>
+                              <a
+                                href={`https://app.secondme.me/${partnerParams.recommendedPartner.username}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full sm:w-auto relative z-20 cursor-pointer inline-block text-center px-8 py-3 bg-brand-emerald-500 border-2 border-brand-emerald-500 text-white text-sm font-black tracking-widest uppercase hover:bg-brand-emerald-400 hover:text-brand-slate-950 transition-all rounded-md shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+                              >
+                                [ 🚀 登陆 Ta 的真实主页 ]
+                              </a>
+                              <p className="text-[10px] text-brand-slate-500 mt-2">
+                                提示：您现在可以代表本我，与 Ta
+                                展开真实的人类对话。
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                    ) : null}
                     </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 text-left">
-                  <MedicalDictionary
-                    defenseLevel={myPayload.defenseLevel}
-                    tempPreference={myPayload.tempPreference}
-                    rhythmPerception={myPayload.rhythmPerception}
-                  />
+                  </div>
                 </div>
 
                 <div className="flex gap-3 justify-center mt-6">
@@ -676,6 +769,8 @@ export default function MatchPage() {
                       setPartnerParams(null);
                       selfSessionIdRef.current = null;
                       partnerSessionIdRef.current = null;
+                      hasInjectedZhihuRef.current = false;
+                      hasStartedChatRef.current = false;
                     }}
                     className="px-6 py-2.5 border border-brand-emerald-500/50 text-brand-emerald-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-emerald-500/10 transition-all rounded-md"
                   >

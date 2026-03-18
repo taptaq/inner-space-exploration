@@ -1,13 +1,9 @@
-const { Client } = require('pg');
 require('dotenv').config({ path: '.env.local' });
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 async function main() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL.replace("prisma", "pg"),
-    ssl: { rejectUnauthorized: false },
-  });
-  await client.connect();
-  const res = await client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'KnowledgeCard';");
-  console.log(res.rows);
-  await client.end();
+  const users = await prisma.user.findMany({ select: { id: true, email: true, name: true, token: true } });
+  console.log("Users in DB:", users);
 }
-main();
+main().catch(console.error).finally(() => prisma.$disconnect());

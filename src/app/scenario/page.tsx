@@ -45,6 +45,12 @@ export default function ScenarioPage() {
     SpeechSynthesisVoice[]
   >([]);
 
+  // 新增：A2A Onboarding Phase
+  const [phase, setPhase] = useState<"analyzing" | "review" | "scenario">(
+    "analyzing",
+  );
+  const [prefillData, setPrefillData] = useState<any>(null);
+
   // 累计参数收集器
   const [accDefense, setAccDefense] = useState(50);
   const [accTemp, setAccTemp] = useState<TempPreference>("恒温");
@@ -55,19 +61,59 @@ export default function ScenarioPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => setIsRendered(true), 300);
-    
-    // Fetch scenario tips from the database
-    fetch("/api/knowledge?type=scenario")
-      .then((res) => res.json())
-      .then((data: ScenarioTip[]) => {
-        setDbScenarioTips(data);
+
+    const initializeData = async () => {
+      try {
+        const fetchTips = fetch("/api/knowledge?type=scenario").then((res) =>
+          res.json(),
+        );
+
+        // 优先拉取 user/profile 以确保 store 中有真实的 profileData
+        const token =
+          typeof window !== "undefined" ? localStorage.getItem("token") : null;
+        if (token) {
+          const profileRes = await fetch("/api/user/profile", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.status === 401) {
+            localStorage.removeItem("token");
+            router.push("/");
+            return;
+          }
+          if (profileRes.ok) {
+            const data = await profileRes.json();
+            useAgentStore.setState({ profileData: data });
+          }
+        }
+
+        const { profileData } = useAgentStore.getState();
+        const fetchPrefill = fetch("/api/agent-prefill", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ profileData }),
+        }).then((res) => res.json());
+
+        const [tipsData, prefillData] = await Promise.all([
+          fetchTips,
+          fetchPrefill,
+        ]);
+
+        setDbScenarioTips(tipsData);
+        setPrefillData(prefillData);
+        setPhase("review");
         setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch scenario tips:", err);
+      } catch (err) {
+        console.error("Failed to initialize scenario:", err);
+        setPhase("scenario"); // Fallback
         setIsLoading(false);
-      });
-      
+      }
+    };
+
+    initializeData();
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -101,7 +147,7 @@ export default function ScenarioPage() {
         left: Math.random() * 100,
         dur: Math.random() * 6 + 10,
         delay: Math.random() * 2,
-      }))
+      })),
     );
   }, []);
 
@@ -291,21 +337,146 @@ export default function ScenarioPage() {
     }
   };
 
-  if (isLoading) {
+  if (phase === "analyzing" || isLoading) {
     return (
       <main className="min-h-screen bg-brand-slate-950 font-mono flex items-center justify-center relative overflow-hidden">
-        <div className="flex flex-col items-center gap-6 z-10">
-          <div className="relative w-16 h-16">
-            <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full" />
-            <div className="absolute inset-0 border-4 border-t-brand-cyan-400 border-r-brand-cyan-400 rounded-full animate-spin" />
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute bg-white rounded-full opacity-50 animate-twinkle"
+              style={{
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                animationDuration: `${star.dur}s`,
+                animationDelay: `${star.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="flex flex-col items-center gap-6 z-10 animate-[fadeIn_0.5s_ease-out]">
+          <div className="relative w-24 h-24">
+            <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full animate-ping" />
+            <div
+              className="absolute inset-0 border-4 border-t-brand-cyan-400 border-r-brand-cyan-400 rounded-full animate-spin"
+              style={{ animationDuration: "3s" }}
+            />
+            <div
+              className="absolute inset-4 border-4 border-b-brand-emerald-400 border-l-brand-emerald-400 rounded-full animate-spin"
+              style={{ animationDuration: "2s", animationDirection: "reverse" }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-2xl">
+              👁️
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-brand-cyan-400 text-sm font-bold tracking-widest uppercase mb-2 animate-pulse">
-              SYNCING PROTOCOLS
+          <div className="text-center space-y-2">
+            <p className="text-brand-cyan-400 text-sm md:text-base tracking-[0.2em] uppercase font-black animate-pulse">
+              [ Agent 代理正在扫描您的潜意识基底 ]
             </p>
-            <p className="text-brand-slate-500 text-xs tracking-wide">
-              正在加载异星交规与情境预设...
+            <p className="text-brand-slate-500 text-xs tracking-wider">
+              提取历史痕迹... 重构感官维度...
             </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (phase === "review" && prefillData) {
+    return (
+      <main className="min-h-screen bg-brand-slate-950 font-mono text-white overflow-hidden relative flex flex-col items-center justify-center p-4">
+        <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
+          {stars.map((star) => (
+            <div
+              key={star.id}
+              className="absolute bg-white rounded-full opacity-50 animate-twinkle"
+              style={{
+                width: `${star.size}px`,
+                height: `${star.size}px`,
+                top: `${star.top}%`,
+                left: `${star.left}%`,
+                animationDuration: `${star.dur}s`,
+                animationDelay: `${star.delay}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="z-10 w-full max-w-lg bg-brand-slate-900/80 border border-brand-emerald-500/30 rounded-lg p-6 md:p-8 backdrop-blur-md shadow-[0_0_40px_rgba(16,185,129,0.1)] animate-[fadeInTop_0.5s_ease-out]">
+          <h2 className="text-xl md:text-2xl text-brand-emerald-400 font-black tracking-widest uppercase mb-6 flex items-center gap-3">
+            <span className="w-2 h-2 bg-brand-emerald-400 rounded-full animate-pulse" />
+            潜意识诊断报告
+          </h2>
+
+          <div className="space-y-4 mb-8">
+            <div className="bg-brand-slate-950/50 p-4 rounded border border-brand-slate-800">
+              <p className="text-sm text-brand-slate-400 mb-1">Agent 侧写：</p>
+              <p className="text-base text-brand-slate-200 italic leading-relaxed border-l-2 border-brand-emerald-500/50 pl-3">
+                "{prefillData.reasoning}"
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
+                <p className="text-xs text-brand-slate-500 mb-1">
+                  心理防线 (Defense)
+                </p>
+                <p className="text-lg text-brand-cyan-400 font-bold">
+                  {prefillData.defenseLevel}%
+                </p>
+              </div>
+              <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
+                <p className="text-xs text-brand-slate-500 mb-1">
+                  温度偏好 (Temp)
+                </p>
+                <p className="text-lg text-brand-orange-400 font-bold">
+                  {prefillData.tempPreference}
+                </p>
+              </div>
+              <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
+                <p className="text-xs text-brand-slate-500 mb-1">
+                  节奏感知 (Rhythm)
+                </p>
+                <p className="text-lg text-brand-purple-400 font-bold">
+                  {prefillData.rhythmPerception}%
+                </p>
+              </div>
+              <div className="bg-brand-slate-950/50 p-3 rounded border border-brand-slate-800">
+                <p className="text-xs text-brand-slate-500 mb-1">
+                  隐秘渴望 (Hidden Need)
+                </p>
+                <p
+                  className="text-sm text-brand-emerald-400 font-bold truncate"
+                  title={prefillData.hiddenNeed}
+                >
+                  {prefillData.hiddenNeed}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => {
+                setDefenseLevel(prefillData.defenseLevel || 50);
+                setTempPreference(prefillData.tempPreference || "恒温");
+                setRhythmPerception(prefillData.rhythmPerception || 50);
+                setHiddenNeed(prefillData.hiddenNeed || "寻求共鸣");
+                router.push("/observatory");
+              }}
+              className="w-full py-4 bg-brand-emerald-500/10 border-2 border-brand-emerald-500 text-brand-emerald-400 font-black tracking-widest uppercase hover:bg-brand-emerald-500 hover:text-brand-slate-950 transition-all rounded shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+            >
+              [ 确认重组此人格，直接升舱 ]
+            </button>
+            <button
+              onClick={() => setPhase("scenario")}
+              className="w-full py-3 bg-transparent border border-brand-slate-700 text-brand-slate-400 text-sm tracking-widest uppercase hover:bg-brand-slate-800 hover:text-white transition-all rounded"
+            >
+              推翻诊断，进行手动场景实测
+            </button>
           </div>
         </div>
       </main>
@@ -376,16 +547,16 @@ export default function ScenarioPage() {
             ${isTransitioning ? "opacity-0 blur-md scale-95 translate-y-8" : "opacity-100 blur-0 scale-100 translate-y-0"}
             ${isRendered ? "" : "opacity-0"}`}
         >
-        {/* 情境描述 */}
-        <div className="mb-6 sm:mb-8 px-4">
-          <p className="text-lg sm:text-xl md:text-2xl text-brand-slate-300 leading-relaxed font-light tracking-wide">
-            {currentScenario.scene}
-          </p>
+          {/* 情境描述 */}
+          <div className="mb-6 sm:mb-8 px-4">
+            <p className="text-lg sm:text-xl md:text-2xl text-brand-slate-300 leading-relaxed font-light tracking-wide">
+              {currentScenario.scene}
+            </p>
 
-          {/* 语音控制区 */}
-          <div className="mt-4 flex items-center justify-center gap-3">
-            {/* 语音播放按钮 */}
-            {/* <button
+            {/* 语音控制区 */}
+            <div className="mt-4 flex items-center justify-center gap-3">
+              {/* 语音播放按钮 */}
+              {/* <button
               onClick={() => toggleSpeech(currentScenario.scene)}
               className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full border transition-all duration-300 text-xs tracking-wider
                 ${isSpeaking
@@ -411,8 +582,8 @@ export default function ScenarioPage() {
               )}
             </button> */}
 
-            {/* 男/女声切换 */}
-            {/* <div className="inline-flex items-center rounded-full border border-brand-slate-700 bg-brand-slate-900/50 overflow-hidden text-[10px] tracking-wider">
+              {/* 男/女声切换 */}
+              {/* <div className="inline-flex items-center rounded-full border border-brand-slate-700 bg-brand-slate-900/50 overflow-hidden text-[10px] tracking-wider">
               <button
                 onClick={() => {
                   stopSpeech();
@@ -441,40 +612,40 @@ export default function ScenarioPage() {
                 ♂ 男声
               </button>
             </div> */}
+            </div>
           </div>
-        </div>
 
-        {/* 口语化提示 */}
-        <div className="mb-8 sm:mb-10 px-6">
-          <p className="text-xs sm:text-sm text-brand-slate-500 leading-relaxed tracking-wide italic">
-            {currentScenario.hint}
-          </p>
-        </div>
-
-        {/* 核心问答 / 输入区 */}
-        {currentScenario.isTextInput ? (
-          <div className="w-full flex flex-col items-center gap-6 px-4">
-             <textarea
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              placeholder="[ 记录你的极密档案... ]"
-              className="w-full h-32 bg-brand-slate-900/50 border border-brand-slate-700 rounded-md p-4 text-brand-slate-300 focus:outline-none focus:border-brand-cyan-500/60 transition-colors resize-none placeholder-brand-slate-600 tracking-wider shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
-            />
-            <button
-              onClick={handleTextSubmit}
-              disabled={isTransitioning || !textInput.trim()}
-              className="px-8 py-3 w-full sm:w-auto border border-brand-cyan-500/50 text-brand-cyan-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              [ 封存并进入引力网 ]
-            </button>
+          {/* 口语化提示 */}
+          <div className="mb-8 sm:mb-10 px-6">
+            <p className="text-xs sm:text-sm text-brand-slate-500 leading-relaxed tracking-wide italic">
+              {currentScenario.hint}
+            </p>
           </div>
-        ) : (
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2">
-            {/* 选项 A */}
-            <button
-            onClick={() => handleChoice("A")}
-            disabled={isTransitioning}
-            className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
+
+          {/* 核心问答 / 输入区 */}
+          {currentScenario.isTextInput ? (
+            <div className="w-full flex flex-col items-center gap-6 px-4">
+              <textarea
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="[ 记录你的极密档案... ]"
+                className="w-full h-32 bg-slate-900/80 border border-slate-700 rounded-md p-4 text-slate-200 focus:outline-none focus:border-brand-cyan-500/60 transition-colors resize-none placeholder-slate-500 tracking-wider shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
+              />
+              <button
+                onClick={handleTextSubmit}
+                disabled={isTransitioning || !textInput.trim()}
+                className="px-8 py-3 w-full sm:w-auto border border-brand-cyan-500/50 text-brand-cyan-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                [ 封存并进入引力网 ]
+              </button>
+            </div>
+          ) : (
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2">
+              {/* 选项 A */}
+              <button
+                onClick={() => handleChoice("A")}
+                disabled={isTransitioning}
+                className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
               ${
                 chosenSide === "A"
                   ? "border-brand-cyan-400 bg-brand-cyan-950/40 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-[1.02]"
@@ -482,18 +653,18 @@ export default function ScenarioPage() {
                     ? "border-brand-slate-800 opacity-30 scale-95"
                     : "border-brand-slate-700 hover:border-brand-cyan-500/60 bg-brand-slate-900/30 hover:bg-brand-cyan-950/20 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
               }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-              {currentScenario.optionA?.text}
-            </span>
-          </button>
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                  {currentScenario.optionA?.text}
+                </span>
+              </button>
 
-          {/* 选项 B */}
-          <button
-            onClick={() => handleChoice("B")}
-            disabled={isTransitioning}
-            className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
+              {/* 选项 B */}
+              <button
+                onClick={() => handleChoice("B")}
+                disabled={isTransitioning}
+                className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
               ${
                 chosenSide === "B"
                   ? "border-brand-emerald-400 bg-brand-emerald-950/40 shadow-[0_0_30px_rgba(52,211,153,0.3)] scale-[1.02]"
@@ -501,54 +672,61 @@ export default function ScenarioPage() {
                     ? "border-brand-slate-800 opacity-30 scale-95"
                     : "border-brand-slate-700 hover:border-brand-emerald-500/60 bg-brand-slate-900/30 hover:bg-brand-emerald-950/20 hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]"
               }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-              {currentScenario.optionB?.text}
-            </span>
-          </button>
-        </div>
-        )}
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                  {currentScenario.optionB?.text}
+                </span>
+              </button>
+            </div>
+          )}
 
-        {/* 底部提示 */}
-        <p className="mt-10 text-xs text-brand-slate-600 tracking-widest animate-pulse">
-          {currentScenario.isTextInput ? "[ 探寻内心深处的渴望 ]" : "[ 凭你的第一直觉选择 ]"}
-        </p>
-      </div>
+          {/* 底部提示 */}
+          <p className="mt-10 text-xs text-brand-slate-600 tracking-widest animate-pulse">
+            {currentScenario.isTextInput
+              ? "[ 探寻内心深处的渴望 ]"
+              : "[ 凭你的第一直觉选择 ]"}
+          </p>
+        </div>
       </div>
 
       {/* 转场科普浮层 */}
-      {showTip && (() => {
-        const tip = dbScenarioTips.find((t) => t.scenarioId === currentScenario.id);
-        if (!tip) return null;
-        return (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-slate-950/60 backdrop-blur-sm">
-            <div className="max-w-md w-full bg-brand-slate-900/95 backdrop-blur-xl border border-brand-cyan-800/40 rounded-lg p-6 shadow-[0_0_40px_rgba(6,182,212,0.15)] animate-[fadeIn_0.5s_ease-out]">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{tip.icon}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-cyan-500/15 text-brand-cyan-400 font-bold tracking-widest uppercase">
-                  🔬 深空医典
-                </span>
+      {showTip &&
+        (() => {
+          const tip = dbScenarioTips.find(
+            (t) => t.scenarioId === currentScenario.id,
+          );
+          if (!tip) return null;
+          return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-slate-950/60 backdrop-blur-sm">
+              <div className="max-w-md w-full bg-brand-slate-900/95 backdrop-blur-xl border border-brand-cyan-800/40 rounded-lg p-6 shadow-[0_0_40px_rgba(6,182,212,0.15)] animate-[fadeIn_0.5s_ease-out]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-lg">{tip.icon}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-cyan-500/15 text-brand-cyan-400 font-bold tracking-widest uppercase">
+                    🔬 深空医典
+                  </span>
+                </div>
+                <h3 className="text-sm font-bold text-white mb-2 tracking-wide">
+                  {tip.title}
+                </h3>
+                <p className="text-xs text-brand-slate-400 leading-relaxed mb-3">
+                  {tip.content}
+                </p>
+                <p className="text-[10px] text-brand-slate-600 italic mb-5">
+                  — {tip.source}
+                </p>
+                <button
+                  onClick={handleNextFromTip}
+                  className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
+                >
+                  {isLastQuestion
+                    ? "[ → 查看你的蓝图 ]"
+                    : `[ → 第 ${currentIndex + 2} 题 ]`}
+                </button>
               </div>
-              <h3 className="text-sm font-bold text-white mb-2 tracking-wide">
-                {tip.title}
-              </h3>
-              <p className="text-xs text-brand-slate-400 leading-relaxed mb-3">
-                {tip.content}
-              </p>
-              <p className="text-[10px] text-brand-slate-600 italic mb-5">
-                — {tip.source}
-              </p>
-              <button
-                onClick={handleNextFromTip}
-                className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
-              >
-                {isLastQuestion ? "[ → 查看你的蓝图 ]" : `[ → 第 ${currentIndex + 2} 题 ]`}
-              </button>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </main>
   );
 }

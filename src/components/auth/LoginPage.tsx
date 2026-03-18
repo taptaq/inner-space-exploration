@@ -22,7 +22,7 @@ export default function LoginPage() {
         delay: Math.random() * 4,
         opacity: Math.random() * 0.5 + 0.2,
       })),
-    []
+    [],
   );
 
   const handleLogin = () => {

@@ -1,52 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { RecommendedUser } from "@/types/agent";
+import { getCurrentUser } from "@/lib/secondme";
 
-export const defaultMockUsers = [
-  {
-    username: "星尘观测者_Lumina",
-    route: "lumina",
-    matchScore: 0,
-    title: "寂静宙域迷航者",
-    hook: "在绝对零度中寻找微弱的温宿",
-    briefIntroduction: "我曾在边缘星系观测了三万次新星爆发，但仍然读不懂人类的频率。",
-    // Provide explicit dummy agent params so the match algorithm doesn't error out
-    defenseLevel: 90,
-    tempPreference: "极寒",
-    rhythmPerception: 20,
-    hiddenNeed: "渴望一场完全失控的陨石雨",
-    shades: [],
-    softMemory: []
-  },
-  {
-    username: "拾荒人-K9",
-    route: "k9-scavenger",
-    matchScore: 0,
-    title: "深空信号解构师",
-    hook: "丢弃一切，直至寻到本质",
-    briefIntroduction: "不要试图防备我。你的每次心跳都在主动向我发送握手协议。",
-    defenseLevel: 30,
-    tempPreference: "熔毁",
-    rhythmPerception: 95,
-    hiddenNeed: "想在毁灭中看到重生的火花",
-    shades: [],
-    softMemory: []
-  },
-  {
-    username: "共振幽灵-X",
-    route: "resonance-x",
-    matchScore: 0,
-    title: "薛定谔的观察者",
-    hook: "我同时存在，也同时虚无",
-    briefIntroduction: "请调整你的频率，如果不够契合，你甚至无法在雷达上看见我。",
-    defenseLevel: 60,
-    tempPreference: "恒温",
-    rhythmPerception: 60,
-    hiddenNeed: "只想要一段无关痛痒但足够漫长的陪伴",
-    shades: [],
-    softMemory: []
-  }
-];
 
 export async function GET(req: NextRequest) {
   try {
@@ -60,12 +16,23 @@ export async function GET(req: NextRequest) {
 
     const token = authHeader.split(" ")[1];
 
+    let currentUserEmail = "";
+    try {
+      const secondMeUser = await getCurrentUser(token);
+      if (secondMeUser && secondMeUser.email) {
+        currentUserEmail = secondMeUser.email;
+      }
+    } catch(e) {
+      console.error("Failed to fetch secondme user in discover:", e);
+    }
+
     // 查询所有存有有效数据（内太空特征）但排除自己的本地用户
     const localUsers = await prisma.user.findMany({
       where: {
-        NOT: {
-          token: token,
-        },
+        AND: [
+          { token: { not: token } },
+          currentUserEmail ? { email: { not: currentUserEmail } } : {}
+        ],
         // 可选：确保拉取的用户曾经历过雷达设定
         defenseLevel: { not: null },
       },
@@ -76,53 +43,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (localUsers.length === 0) {
-      console.warn("DB Discover API found nobody else. Falling back to mock universe data for testing purposes.");
+      console.warn("DB Discover API found nobody else. Returning empty array.");
       return NextResponse.json({
-        users: [
-          {
-            username: "星尘观测者_Lumina",
-            route: "lumina",
-            matchScore: 0,
-            title: "寂静宙域迷航者",
-            hook: "在绝对零度中寻找微弱的温宿",
-            briefIntroduction: "我曾在边缘星系观测了三万次新星爆发，但仍然读不懂人类的频率。",
-            // Provide explicit dummy agent params so the match algorithm doesn't error out
-            defenseLevel: 90,
-            tempPreference: "极寒",
-            rhythmPerception: 20,
-            hiddenNeed: "渴望一场完全失控的陨石雨",
-            shades: [],
-            softMemory: []
-          },
-          {
-            username: "拾荒人-K9",
-            route: "k9-scavenger",
-            matchScore: 0,
-            title: "深空信号解构师",
-            hook: "丢弃一切，直至寻到本质",
-            briefIntroduction: "不要试图防备我。你的每次心跳都在主动向我发送握手协议。",
-            defenseLevel: 30,
-            tempPreference: "熔毁",
-            rhythmPerception: 95,
-            hiddenNeed: "想被绝对的暴力引力撕成碎片",
-            shades: [],
-            softMemory: []
-          },
-          {
-            username: "Nebula_Echo",
-            route: "nebula-echo",
-            matchScore: 0,
-            title: "共鸣实验体",
-            hook: "我是一面只会反射你隐秘诉求的镜子",
-            briefIntroduction: "没有名字，只有频率。你抛出的引力越大，我贴得越紧。",
-            defenseLevel: 50,
-            tempPreference: "恒温",
-            rhythmPerception: 50,
-            hiddenNeed: "请成为唯一能听懂我回声的人",
-            shades: [],
-            softMemory: []
-          }
-        ]
+        users: []
       });
     }
 

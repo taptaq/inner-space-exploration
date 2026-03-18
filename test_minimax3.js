@@ -7,7 +7,7 @@ if (!apiKey) {
 }
 
 const req = https.request({
-  hostname: 'api.minimax.chat',
+  hostname: 'api.minimax.io',
   port: 443,
   path: '/v1/text/chatcompletion_v2',
   method: 'POST',

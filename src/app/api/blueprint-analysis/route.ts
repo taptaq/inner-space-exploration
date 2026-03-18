@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const { myPayload, partnerData, isSolo } = await req.json();
 
     const apiKey = process.env.MINIMAX_API_KEY;
-    const model = process.env.MINIMAX_MODEL || "MiniMax-Text-01";
+    const model = process.env.MINIMAX_MODEL || "MiniMax-M2.5-highspeed";
 
     // console.info(apiKey, '---apiKey')
 
@@ -145,9 +145,16 @@ ${partnerBg}
     // Parse JSON
     let parsedContent;
     try {
-      // 提取可能的 JSON 块
+      // 提取可能的 JSON 块并做清理
+      let jsonStr = content;
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : content;
+      if (jsonMatch) {
+         jsonStr = jsonMatch[0];
+      }
+      // 防御模型输出未转义换行或带 markdown。将实际换行符替换为 \\n，避免 SyntaxError
+      jsonStr = jsonStr.replace(/```json/gi, "").replace(/```/g, "").trim();
+      jsonStr = jsonStr.replace(/\n(?! *[}\]])/g, "\\n");
+      
       parsedContent = JSON.parse(jsonStr);
     } catch (e) {
       console.error("Failed to parse JSON from LLM: ", content);

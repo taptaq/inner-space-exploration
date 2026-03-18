@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { config, secondmeApi, getCurrentUser } from "@/lib/secondme";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -17,8 +19,8 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Failed to fetch user info" },
-        { status: 400 }
+        { error: "Failed to fetch user info or invalid token" },
+        { status: 401 }
       );
     }
 

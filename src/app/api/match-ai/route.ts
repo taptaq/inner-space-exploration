@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { RecommendedUser, TempPreference } from "@/types/agent";
-import { defaultMockUsers } from "@/app/api/user/discover/route";
+import { getCurrentUser } from "@/lib/secondme";
 
 interface AiCandidate extends RecommendedUser {
   _defenseLevel?: number | null;
@@ -30,10 +30,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let currentUserEmail = "";
+    try {
+      const secondMeUser = await getCurrentUser(token);
+      if (secondMeUser && secondMeUser.email) {
+        currentUserEmail = secondMeUser.email;
+      }
+    } catch(e) {
+      console.error("Failed to fetch secondme user in match-ai:", e);
+    }
+
     // 1. Fetch Candidates (exclude self)
     const localUsers = await prisma.user.findMany({
       where: {
-        NOT: { token: token },
+        AND: [
+          { token: { not: token } },
+          currentUserEmail ? { email: { not: currentUserEmail } } : {}
+        ],
         defenseLevel: { not: null }, // Must have completed onboarding
       },
       take: 20, // Increased candidate pool
@@ -58,8 +71,11 @@ export async function POST(req: NextRequest) {
         _hiddenNeed: u.hiddenNeed,
       }));
     } else {
-      console.warn("No active users found. Using default mock users for AI Matchmaking.");
-      candidates = (defaultMockUsers as unknown) as AiCandidate[]; // Will be exported from /api/user/discover
+      console.warn("No active users found. Aborting AI Matchmaking.");
+      return NextResponse.json(
+        { error: "当前星域没有活跃的适合航行者，请邀请更多人加入深空探测。" },
+        { status: 404 }
+      );
     }
 
     // 2. Prepare Data for AI
@@ -104,13 +120,13 @@ ${candidateDataString}
 
     // 3. Call Minimax
     const MINIMAX_API_KEY = process.env.MINIMAX_API_KEY;
-    const MINIMAX_MODEL = process.env.MINIMAX_MODEL_ID || "abab6.5g-chat";
+    const MINIMAX_MODEL = process.env.MINIMAX_MODEL || "M2-her";
 
     if (!MINIMAX_API_KEY) {
       throw new Error("Missing MINIMAX_API_KEY");
     }
 
-    const aiRes = await fetch("https://api.minimax.chat/v1/text/chatcompletion_v2", {
+    const aiRes = await fetch("https://api.minimax.io/v1/text/chatcompletion_v2", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

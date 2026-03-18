@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/secondme";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,16 +25,34 @@ export async function POST(req: NextRequest) {
       profileData
     } = await req.json();
 
-    // 先用 token 定位当前正在操作的数据库 User 记录
-    const currentUser = await prisma.user.findUnique({
+    let currentUser = await prisma.user.findUnique({
       where: { token },
     });
 
+    // 如果数据库不存在该记录（如本地数据库曾被清空），验证 token 若仍有效则静默重构该用户
     if (!currentUser) {
-      return NextResponse.json(
-        { error: "User not found for the provided token" },
-        { status: 404 }
-      );
+      const secondMeUser = await getCurrentUser(token);
+      if (secondMeUser) {
+        const email = secondMeUser.email || `${secondMeUser.id}@secondme.local`;
+        const name = secondMeUser.name || secondMeUser.nickname || "SecondMe User";
+        currentUser = await prisma.user.upsert({
+          where: { email },
+          update: { token },
+          create: {
+            email,
+            token,
+            name,
+            avatar: secondMeUser.avatar || secondMeUser.avatarUrl || null,
+          }
+        });
+      }
+
+      if (!currentUser) {
+        return NextResponse.json(
+          { error: "User not found for the provided token" },
+          { status: 404 }
+        );
+      }
     }
 
     // 更新用户记录上的拓展特征字段
