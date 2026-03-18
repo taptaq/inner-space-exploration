@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { config, getCurrentUser } from "@/lib/secondme";
 import prisma from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const { code, redirectUri } = await request.json();
