@@ -38,8 +38,10 @@ export default function OnboardingPage() {
   }, []);
 
   // 预生成背景流星与星轨游离碎片 (与首页保持沉浸感统一)
-  const particles = useMemo(
-    () =>
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setParticles(
       Array.from({ length: 40 }).map(() => ({
         id: Math.random(),
         size: Math.random() * 2 + 1,
@@ -48,8 +50,8 @@ export default function OnboardingPage() {
         duration: Math.random() * 8 + 15,
         delay: Math.random() * 2,
       })),
-    [],
-  );
+    );
+  }, []);
 
   const handleLaunch = () => {
     if (isLaunching) return;
@@ -58,7 +60,7 @@ export default function OnboardingPage() {
     console.log(
       "[SYS_INFO] 申请脱离地心引力... 开始封存参数并对接 A2A 失重舱序列",
     );
-    console.log("[PAYLOAD_FREEZE]", JSON.stringify(payload, null, 2));
+    // console.log("[PAYLOAD_FREEZE]", JSON.stringify(payload, null, 2));
 
     // 拦截默认瞬跳，加入 1.5 秒心跳脉冲过渡，建立期待感
     setTimeout(() => {

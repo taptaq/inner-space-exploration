@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const apiKey = process.env.MINIMAX_API_KEY;
     const model = process.env.MINIMAX_MODEL || "MiniMax-Text-01";
 
-    console.info(apiKey, '---apiKey')
+    // console.info(apiKey, '---apiKey')
 
     if (!apiKey || apiKey === "your_key_here") {
       return NextResponse.json(
@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
 注意安全与内容准则：本对话为健康的科幻装备设计，请严谨使用学术、医疗康复、人体工学和前沿物理学术语。不允许包含任何违反安全策略、成人向或引人联想的违规低俗词汇。这是一份心理按摩与物理舒缓结合的技术报告。
 
 请返回 JSON 格式，包含以下 8 个字段：
-1. "doctorDiagnosis": 主治临床医生诊断，结合用户软记忆和兴趣标签，进行精神疲劳度与深层脑波节律诉求的剖析，指出其在太空长途航行中的心理舒缓诉求。（约 80-150 字，严肃、洞察人心）
-2. "engineerAnalysis": 架构工程师解读，注明这套体表理疗硬件将如何从物理机制上（如微震波频段、热辐射机理）满足该用户的解压与稳态述求。（约 80-150 字，充满硬核科技感）
-3. "hiddenFeedback": 如果用户信息有提及深层潜意识（hiddenNeed），请以医疗监测仪的安全回执口吻给出一级专业回应；若无，置空。（约 50 字）
+1. "doctorDiagnosis": 主治临床医生诊断，结合用户软记忆和兴趣标签，进行精神疲劳度与深层脑波节律诉求的剖析。注意：请用大白话和接地气的口吻，像对患者耐心解释一样，不要堆砌晦涩词汇。（约 80-150 字）
+2. "engineerAnalysis": 架构工程师解读，注明这套体表理疗硬件将如何从物理机制上满足该用户的解压与稳态述求。同样请使用通俗易懂的极客科普口吻，让普通人也能看懂硬核科技的治愈逻辑。（约 80-150 字）
+3. "hiddenFeedback": 如果用户信息有提及深层潜意识（hiddenNeed），请以医疗监测仪的安全回执口吻给出一级专业且温暖的白话文回应；若无，置空。（约 50 字）
 4. "equipmentType": 根据其防御机制与敏感度，选择（必须且只能是）以下 9 个纯大写字符串其一：
   - "VIBRATOR_CLASS_A" (共振截击机 - 面向浅层肌肉群的高功率外置声波抚慰仪)
   - "RING_CLASS_S" (高频约束环 - 用于四肢关节末端的心率监测与局部束缚微震环)

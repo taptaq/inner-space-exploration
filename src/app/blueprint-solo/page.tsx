@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
@@ -9,19 +9,23 @@ import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRend
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
+/*
 function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [pulseOpacity, setPulseOpacity] = useState(0);
 
   const colorMap: Record<string, string> = {
-    "极寒": "rgba(56,189,248,VAL)",
-    "冷静": "rgba(6,182,212,VAL)",
-    "恒温": "rgba(52,211,153,VAL)",
-    "温热": "rgba(251,146,60,VAL)",
-    "熔毁": "rgba(244,63,94,VAL)",
+    极寒: "rgba(56,189,248,VAL)",
+    冷静: "rgba(6,182,212,VAL)",
+    恒温: "rgba(52,211,153,VAL)",
+    温热: "rgba(251,146,60,VAL)",
+    熔毁: "rgba(244,63,94,VAL)",
   };
 
-  const pulseColor = (colorMap[temp] || "rgba(14,165,233,VAL)").replace("VAL", String(pulseOpacity));
+  const pulseColor = (colorMap[temp] || "rgba(14,165,233,VAL)").replace(
+    "VAL",
+    String(pulseOpacity),
+  );
 
   const startSimulation = () => {
     if (isSimulating) return;
@@ -39,7 +43,8 @@ function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
         clearInterval(pulseTimer);
         setPulseOpacity(0);
         setIsSimulating(false);
-        if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(0);
+        if (typeof navigator !== "undefined" && navigator.vibrate)
+          navigator.vibrate(0);
       }
     }, interval);
   };
@@ -66,6 +71,7 @@ function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
     </>
   );
 }
+*/
 
 export default function BlueprintSoloPage() {
   const router = useRouter();
@@ -77,8 +83,10 @@ export default function BlueprintSoloPage() {
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
 
   // 预生成孤寂星空背景粒子保持沉浸感
-  const stars = useMemo(
-    () =>
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setStars(
       Array.from({ length: 40 }).map(() => ({
         id: Math.random(),
         width: Math.random() * 2 + 1,
@@ -88,8 +96,8 @@ export default function BlueprintSoloPage() {
         animationDelay: Math.random() * 3,
         opacity: Math.random() * 0.3 + 0.1,
       })),
-    [],
-  );
+    );
+  }, []);
 
   // 获取当前领航员自身数据
   const myPayload = getSerializedPayload();
@@ -150,12 +158,17 @@ export default function BlueprintSoloPage() {
   const freqMax = myPayload.rhythmPerception + 40;
   const defaultFreq = `${freqMin} - ${freqMax} Hz (曲率震动阈)`;
 
+  const fetchCalledRef = useRef(false);
+
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
 
     // 发起大模型动态单人解读请求
     const fetchAnalysis = async () => {
+      if (fetchCalledRef.current) return;
+      fetchCalledRef.current = true;
+
       try {
         const res = await fetch("/api/blueprint-analysis", {
           method: "POST",
@@ -177,7 +190,7 @@ export default function BlueprintSoloPage() {
         setIsLoadingAnalysis(false);
       }
     };
-    
+
     fetchAnalysis();
 
     return () => clearTimeout(timer);
@@ -370,7 +383,8 @@ export default function BlueprintSoloPage() {
                           🔒 你的私密心愿破译：
                         </strong>
                         <span className="italic">"{myPayload.hiddenNeed}"</span>
-                        <br/><br/>
+                        <br />
+                        <br />
                         {analysisData.hiddenFeedback}
                       </p>
                     )}
@@ -386,7 +400,11 @@ export default function BlueprintSoloPage() {
 
         {/* 概念装备全息图渲染区 (单人高亮样式) */}
         <div className="mt-8 relative z-20">
-          <EquipmentConceptRender payload={myPayload} analysisData={analysisData} isSolo={true} />
+          <EquipmentConceptRender
+            payload={myPayload}
+            analysisData={analysisData}
+            isSolo={true}
+          />
         </div>
 
         {/* 深空医学档案 */}
@@ -403,11 +421,11 @@ export default function BlueprintSoloPage() {
 
         {/* 底部功能盘 */}
         <footer className="pt-12 text-center space-y-4">
-          <SimulationButton 
-            rhythm={myPayload.rhythmPerception} 
+          {/* <SimulationButton
+            rhythm={myPayload.rhythmPerception}
             temp={myPayload.tempPreference}
           />
-          <br />
+          <br /> */}
           <button
             onClick={() => router.push("/match")}
             className="px-8 py-3 border border-brand-emerald-500/50 text-brand-emerald-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-emerald-500/10 hover:shadow-[0_0_15px_rgba(52,211,153,0.2)] transition-all"

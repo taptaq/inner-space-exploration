@@ -21,7 +21,9 @@ const TOTAL_ROUNDS = 8;
 
 export default function MatchPage() {
   const router = useRouter();
-  const getSerializedPayload = useAgentStore((state) => state.getSerializedPayload);
+  const getSerializedPayload = useAgentStore(
+    (state) => state.getSerializedPayload,
+  );
   const discoverUsers = useAgentStore((state) => state.discoverUsers);
   const bestMatchScore = useAgentStore((state) => state.bestMatchScore);
   const bestMatchUser = useAgentStore((state) => state.bestMatchUser);
@@ -32,7 +34,9 @@ export default function MatchPage() {
   >("matching");
   const [matchProgress, setMatchProgress] = useState(0);
   const [partnerParams, setPartnerParams] = useState<AgentPayload | null>(null);
-  const [alternatePartners, setAlternatePartners] = useState<RecommendedUser[]>([]);
+  const [alternatePartners, setAlternatePartners] = useState<RecommendedUser[]>(
+    [],
+  );
   const [compatibility, setCompatibility] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
@@ -46,9 +50,11 @@ export default function MatchPage() {
 
   const myPayload = getSerializedPayload();
 
-  // 背景星辰
-  const stars = useMemo(
-    () =>
+  // 背景星辰 (Moved to useEffect to avoid hydration error)
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setStars(
       Array.from({ length: 50 }).map(() => ({
         id: Math.random(),
         size: Math.random() * 2 + 1,
@@ -57,12 +63,10 @@ export default function MatchPage() {
         dur: Math.random() * 5 + 3,
         delay: Math.random() * 3,
       })),
-    [],
-  );
+    );
+  }, []);
 
-
-
-  // 阶段一：配对动画
+  // 阶段一：自动初始化并强制进入自动聊天
   useEffect(() => {
     if (phase !== "matching") return;
 
@@ -71,56 +75,62 @@ export default function MatchPage() {
         if (p >= 100) {
           clearInterval(interval);
           const partner = generatePartnerParams(myPayload);
-          
+
           if (bestMatchUser) {
             partner.recommendedPartner = bestMatchUser;
           }
 
           setPartnerParams(partner);
-          setCompatibility(bestMatchScore || calculateCompatibility(myPayload, partner));
-          
+          setCompatibility(
+            bestMatchScore || calculateCompatibility(myPayload, partner),
+          );
+
+          // 1秒后直接强制启动聊天流（跳过以前的 Reveal 和 Selection）
           setTimeout(() => {
-            if ((bestMatchScore || 0) >= 85) {
-              setPhase("reveal");
-            } else {
-              // 为用户筛选最多 3 位其他的备选人
-              const alternates = (discoverUsers || [])
-                .filter(u => u.username !== bestMatchUser?.username)
-                .slice(0, 3);
-              setAlternatePartners(alternates);
-              setPhase("selection");
-            }
-          }, 300);
+            // 直接触发开始聊天，不再逗留
+            const autoStart = document.getElementById("auto-start-trigger");
+            if (autoStart) autoStart.click();
+          }, 1000);
+
           return 100;
         }
-        return p + Math.random() * 8 + 2;
+        return p + Math.random() * 15 + 5;
       });
-    }, 120);
+    }, 50);
 
     return () => clearInterval(interval);
-  }, [phase]);
+  }, [phase, bestMatchUser, bestMatchScore, myPayload]);
 
   // 自动滚动到最新消息
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, displayedText]);
+    chatEndRef.current?.scrollIntoView({
+      behavior: isTyping ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [messages, displayedText, isTyping]);
 
   // 调用 AI 生成一条消息
   const generateMessage = useCallback(
     async (
       speakingRole: "self" | "partner",
-      lastPartnerMessage: string
+      lastPartnerMessage: string,
     ): Promise<string> => {
       const selfPersona = buildPersona(myPayload, "self");
       const partnerPersona = buildPersona(partnerParams!, "partner");
-      
+
       const isSelf = speakingRole === "self";
-      const currentSessionId = isSelf ? selfSessionIdRef.current : partnerSessionIdRef.current;
-      
+      const currentSessionId = isSelf
+        ? selfSessionIdRef.current
+        : partnerSessionIdRef.current;
+
       // 首次会话分配性格设定
       let systemPrompt;
       if (!currentSessionId) {
-        systemPrompt = buildSystemPrompt(selfPersona, partnerPersona, speakingRole);
+        systemPrompt = buildSystemPrompt(
+          selfPersona,
+          partnerPersona,
+          speakingRole,
+        );
       }
 
       // 我们喂给当前角色的 Prompt Message，是“另一个人刚才说的话”。
@@ -138,7 +148,7 @@ export default function MatchPage() {
         const token = localStorage.getItem("token");
         const res = await fetch("/api/chat", {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
@@ -158,7 +168,7 @@ export default function MatchPage() {
         }
 
         const data = await res.json();
-        
+
         // 存储对应角色新生成的 SessionId
         if (data.sessionId) {
           if (isSelf) selfSessionIdRef.current = data.sessionId;
@@ -250,6 +260,16 @@ export default function MatchPage() {
     };
   }, []);
 
+  // 动态解密进度
+  const isFullyUnlocked = phase === "done";
+  // 满进度（8轮对话完之前）最高显示到 88%，营造最后一下突然解锁的期待感
+  const unlockProgress = isFullyUnlocked
+    ? 100
+    : Math.min(88, Math.round((messages.length / TOTAL_ROUNDS) * 88));
+  const maskedPartnerName = partnerParams?.recommendedPartner?.username
+    ? `UNKNOWN_ENTITY_#${partnerParams.recommendedPartner.username.slice(0, 4).toUpperCase()}`
+    : "CLASSIFIED_ENTITY";
+
   return (
     <main className="min-h-screen bg-brand-slate-950 text-white font-mono relative overflow-hidden">
       {/* 深空背景 */}
@@ -300,8 +320,17 @@ export default function MatchPage() {
         {phase === "matching" && (
           <div className="flex-1 flex flex-col items-center justify-center animate-[fadeIn_0.5s_ease-out]">
             <div className="mb-8 relative">
-              <div className="w-24 h-24 rounded-full border-2 border-brand-cyan-500/30 flex items-center justify-center animate-spin" style={{ animationDuration: "3s" }}>
-                <div className="w-16 h-16 rounded-full border border-brand-emerald-400/40 animate-spin" style={{ animationDuration: "2s", animationDirection: "reverse" }}>
+              <div
+                className="w-24 h-24 rounded-full border-2 border-brand-cyan-500/30 flex items-center justify-center animate-spin"
+                style={{ animationDuration: "3s" }}
+              >
+                <div
+                  className="w-16 h-16 rounded-full border border-brand-emerald-400/40 animate-spin"
+                  style={{
+                    animationDuration: "2s",
+                    animationDirection: "reverse",
+                  }}
+                >
                   <div className="w-8 h-8 rounded-full bg-brand-cyan-500/20 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                 </div>
               </div>
@@ -332,8 +361,7 @@ export default function MatchPage() {
                 信号锁定！
               </h2>
               <p className="text-brand-emerald-400 font-bold text-lg tracking-wide">
-                灵魂契合度:{" "}
-                <span className="text-2xl">{compatibility}%</span>
+                灵魂契合度: <span className="text-2xl">{compatibility}%</span>
               </p>
             </div>
 
@@ -369,7 +397,10 @@ export default function MatchPage() {
                   <span className="text-brand-slate-600 text-[10px] tracking-widest">
                     {row.label}
                   </span>
-                  <span className="text-brand-emerald-400 w-16 text-right font-bold truncate" title={row.partner}>
+                  <span
+                    className="text-brand-emerald-400 w-16 text-right font-bold truncate"
+                    title={row.partner}
+                  >
                     {row.partner} 👽
                   </span>
                 </div>
@@ -378,8 +409,15 @@ export default function MatchPage() {
 
             {partnerParams.recommendedPartner && (
               <div className="w-full max-w-sm bg-brand-cyan-900/20 border border-brand-cyan-800/40 rounded-lg p-3 mb-8 text-center text-xs">
-                <span className="text-brand-cyan-400 tracking-widest block mb-1">已捕获真实引力波</span>
-                <span className="text-brand-slate-300">身份签名：{partnerParams.recommendedPartner.title || partnerParams.recommendedPartner.hook || "神秘旅行者"}</span>
+                <span className="text-brand-cyan-400 tracking-widest block mb-1">
+                  已捕获真实引力波
+                </span>
+                <span className="text-brand-slate-300">
+                  身份签名：
+                  {partnerParams.recommendedPartner.title ||
+                    partnerParams.recommendedPartner.hook ||
+                    "神秘旅行者"}
+                </span>
               </div>
             )}
 
@@ -401,7 +439,8 @@ export default function MatchPage() {
                 信号微弱 · 频段错位
               </h2>
               <p className="text-brand-slate-400 text-sm tracking-wide">
-                初次尝试未形成完美共振，契合度仅为 <span className="text-white font-bold">{compatibility}%</span>
+                初次尝试未形成完美共振，契合度仅为{" "}
+                <span className="text-white font-bold">{compatibility}%</span>
               </p>
               <p className="text-xs text-brand-cyan-500 mt-2">
                 但系统捕获到了以下几组相似频率的求救信号，由您亲自决定连接对象：
@@ -409,34 +448,47 @@ export default function MatchPage() {
             </div>
 
             <div className="w-full space-y-4 mb-8">
-              {alternatePartners.length > 0 ? alternatePartners.map((user, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => {
-                    if (!partnerParams) return;
-                    // 更新伴侣参数为选中的用户并进入 reveal 进行确认
-                    const newPartner = { ...partnerParams, recommendedPartner: user };
-                    setPartnerParams(newPartner);
-                    // 假设手动选择的人加点感情分，直接设置一个稍微高一点或平均的契合度，或者重算
-                    setCompatibility(calculateCompatibility(myPayload, newPartner));
-                    setPhase("reveal");
-                  }}
-                  className="w-full text-left bg-brand-slate-900/60 border border-brand-slate-700 hover:border-brand-emerald-400 hover:bg-brand-emerald-900/10 p-4 rounded-lg transition-all group relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-brand-emerald-400 text-xs font-bold tracking-widest uppercase">[ 发起连接 ]</span>
-                  </div>
-                  <div className="flex flex-col space-y-2">
-                    <span className="font-bold text-white text-base">👽 {user.username}</span>
-                    <span className="text-xs text-brand-cyan-400">{user.title || "神秘探索者"}</span>
-                    {user.hook && (
-                      <span className="text-[10px] text-brand-slate-400 italic bg-brand-slate-950/50 p-2 rounded block">
-                        "{user.hook}"
+              {alternatePartners.length > 0 ? (
+                alternatePartners.map((user, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (!partnerParams) return;
+                      // 更新伴侣参数为选中的用户并进入 reveal 进行确认
+                      const newPartner = {
+                        ...partnerParams,
+                        recommendedPartner: user,
+                      };
+                      setPartnerParams(newPartner);
+                      // 假设手动选择的人加点感情分，直接设置一个稍微高一点或平均的契合度，或者重算
+                      setCompatibility(
+                        calculateCompatibility(myPayload, newPartner),
+                      );
+                      setPhase("reveal");
+                    }}
+                    className="w-full text-left bg-brand-slate-900/60 border border-brand-slate-700 hover:border-brand-emerald-400 hover:bg-brand-emerald-900/10 p-4 rounded-lg transition-all group relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-brand-emerald-400 text-xs font-bold tracking-widest uppercase">
+                        [ 发起连接 ]
                       </span>
-                    )}
-                  </div>
-                </button>
-              )) : (
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <span className="font-bold text-white text-base">
+                        👽 {user.username}
+                      </span>
+                      <span className="text-xs text-brand-cyan-400">
+                        {user.title || "神秘探索者"}
+                      </span>
+                      {user.hook && (
+                        <span className="text-[10px] text-brand-slate-400 italic bg-brand-slate-950/50 p-2 rounded block">
+                          "{user.hook}"
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))
+              ) : (
                 <div className="text-center text-sm text-brand-slate-500">
                   当前象限未发现其他活跃信号。
                   <br className="mb-4" />
@@ -449,7 +501,7 @@ export default function MatchPage() {
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={() => {
                 setPhase("matching");
@@ -471,15 +523,26 @@ export default function MatchPage() {
               <div className="flex items-center gap-3">
                 <span className="text-xs text-brand-cyan-400">🧑‍🚀 本我</span>
                 <span className="text-brand-slate-600">⚡</span>
-                <span className="text-xs text-brand-emerald-400">
-                  👽 异星灵魂
+                <span
+                  className={`text-xs ${isFullyUnlocked ? "text-brand-emerald-400" : "text-brand-rose-500 animate-pulse"}`}
+                >
+                  👽{" "}
+                  {isFullyUnlocked
+                    ? partnerParams?.recommendedPartner?.username
+                    : maskedPartnerName}
                 </span>
               </div>
-              <span className="text-[10px] text-brand-slate-600 tracking-widest">
-                {phase === "done"
-                  ? `对话结束 · ${messages.length} 轮`
-                  : `对话中 · ${currentRound}/${TOTAL_ROUNDS}`}
-              </span>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-brand-slate-600 tracking-widest mb-1">
+                  神经波段同步率: {unlockProgress}%
+                </span>
+                <div className="w-24 h-1 bg-brand-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-brand-rose-500 transition-all duration-500"
+                    style={{ width: `${unlockProgress}%` }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* 对话消息列表 */}
@@ -487,17 +550,21 @@ export default function MatchPage() {
               {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`flex ${msg.role === "self" ? "justify-start" : "justify-end"}`}
+                  className={`flex ${msg.role === "self" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed animate-[fadeIn_0.3s_ease-out] ${
+                    className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed animate-[fadeIn_0.3s_ease-out] relative ${
                       msg.role === "self"
                         ? "bg-brand-cyan-950/40 border border-brand-cyan-800/30 text-brand-slate-300"
-                        : "bg-brand-emerald-950/40 border border-brand-emerald-800/30 text-brand-slate-300"
+                        : "bg-brand-rose-950/20 border border-brand-rose-900/30 text-brand-rose-200/90"
                     }`}
                   >
-                    <span className="text-[10px] font-bold tracking-wider block mb-1 opacity-50">
-                      {msg.role === "self" ? "🧑‍🚀 本我" : `👽 ${partnerParams?.recommendedPartner?.username || "异星灵魂"}`}
+                    <span
+                      className={`text-[10px] font-bold tracking-wider block mb-1 opacity-50 ${msg.role === "self" ? "text-right" : "text-left"}`}
+                    >
+                      {msg.role === "self"
+                        ? "本我 🧑‍🚀"
+                        : `👽 ${isFullyUnlocked ? partnerParams?.recommendedPartner?.username : maskedPartnerName}`}
                     </span>
                     {msg.content}
                   </div>
@@ -513,11 +580,15 @@ export default function MatchPage() {
                     className={`max-w-[75%] rounded-lg px-4 py-3 text-sm leading-relaxed ${
                       typingRole === "self"
                         ? "bg-brand-cyan-950/40 border border-brand-cyan-800/30 text-brand-slate-300"
-                        : "bg-brand-emerald-950/40 border border-brand-emerald-800/30 text-brand-slate-300"
+                        : "bg-brand-rose-950/20 border border-brand-rose-900/30 text-brand-rose-200/90"
                     }`}
                   >
-                    <span className="text-[10px] font-bold tracking-wider block mb-1 opacity-50">
-                      {typingRole === "self" ? "🧑‍🚀 本我" : `👽 ${partnerParams?.recommendedPartner?.username || "异星灵魂"}`}
+                    <span
+                      className={`text-[10px] font-bold tracking-wider block mb-1 opacity-50 ${typingRole === "self" ? "text-right" : "text-left"}`}
+                    >
+                      {typingRole === "self"
+                        ? "本我 🧑‍🚀"
+                        : `👽 ${isFullyUnlocked ? partnerParams?.recommendedPartner?.username : maskedPartnerName}`}
                     </span>
                     {displayedText || (
                       <span className="animate-pulse text-brand-slate-500">
@@ -530,23 +601,63 @@ export default function MatchPage() {
               <div ref={chatEndRef} />
             </div>
 
-            {/* 对话结束 */}
+            {/* 对话结束 - 终极身份解密 */}
             {phase === "done" && (
-              <div className="mt-4 pt-4 border-t border-brand-slate-800 text-center space-y-4 animate-[fadeIn_0.5s_ease-out]">
-                <div className="bg-brand-slate-900/60 border border-brand-slate-700 rounded-lg p-5">
-                  <p className="text-xs text-brand-slate-400 mb-2">
-                    ✨ 深空对话实验结束
-                  </p>
-                  <p className="text-sm text-white font-bold">
-                    灵魂契合度: {compatibility}% · 共 {messages.length} 轮对话
-                  </p>
-                  <p className="text-xs text-brand-slate-500 mt-2">
-                    这段对话揭示了你们之间微妙的化学反应。
-                    <br />
-                    也许在茫茫宇宙中，真的有一个频率和你共振的灵魂。
-                  </p>
+              <div className="mt-4 pt-6 border-t border-brand-slate-800 text-center space-y-6 animate-[fadeIn_0.5s_ease-out]">
+                <div className="bg-brand-slate-900/80 border border-brand-emerald-500/50 rounded-lg p-6 relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                  <div className="absolute inset-0 bg-brand-emerald-400/5 animate-pulse mix-blend-screen" />
+                  <h3 className="text-xl text-brand-emerald-400 font-black tracking-widest uppercase mb-4 animate-[fadeInTop_0.5s_ease-out]">
+                    🔒 深空链接永久锚定：档案完全解锁
+                  </h3>
+
+                  {partnerParams?.recommendedPartner ? (
+                    <div className="text-left bg-brand-slate-950/50 p-4 rounded-md border border-brand-slate-700">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-16 h-16 rounded-full bg-brand-slate-800 border-2 border-brand-emerald-400 flex items-center justify-center text-2xl overflow-hidden shrink-0">
+                          👽
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-white mb-1">
+                            {partnerParams.recommendedPartner.username}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-brand-cyan-400">
+                              {partnerParams.recommendedPartner.title ||
+                                "神秘领航员"}
+                            </p>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-emerald-900/50 text-brand-emerald-400 border border-brand-emerald-500/30">
+                              灵魂契合度: {compatibility}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 mt-4">
+                        {partnerParams.recommendedPartner.hook && (
+                          <div className="text-sm text-brand-slate-300 italic border-l-2 border-brand-emerald-500/50 pl-3">
+                            "{partnerParams.recommendedPartner.hook}"
+                          </div>
+                        )}
+                        <p className="text-xs text-brand-slate-400 leading-relaxed">
+                          {partnerParams.recommendedPartner.briefIntroduction ||
+                            "该用户没有留下太多过往日志，但你们的共振证明了一切。"}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 pt-4 border-t border-brand-slate-800 flex justify-end">
+                        <a
+                          href={`https://second-me.cn/${partnerParams.recommendedPartner.route}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-6 py-2.5 bg-brand-emerald-600/20 border border-brand-emerald-500/50 text-brand-emerald-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-emerald-500 hover:text-brand-slate-900 transition-all rounded-sm flex items-center gap-2"
+                        >
+                          [ 开启舱门，登陆 Ta 的主页 ]
+                        </a>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                
+
                 <div className="mt-4 text-left">
                   <MedicalDictionary
                     defenseLevel={myPayload.defenseLevel}
@@ -570,29 +681,27 @@ export default function MatchPage() {
                   >
                     [ 🎰 再配一次 ]
                   </button>
-                  {partnerParams?.recommendedPartner?.route ? (
-                    <a
-                      href={`https://second-me.cn/${partnerParams.recommendedPartner.route}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-6 py-2.5 bg-brand-cyan-500/20 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/40 transition-all rounded-md flex items-center gap-2"
-                    >
-                      [ 去 Ta 的主页逛逛 ]
-                    </a>
-                  ) : (
-                    <button
-                      onClick={() => router.push("/")}
-                      className="px-6 py-2.5 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-md"
-                    >
-                      [ 返回首页 ]
-                    </button>
-                  )}
+                  {/* The auto-start-trigger was moved outside conditional rendering */}
+                  <div className="hidden"></div>
+                  <button
+                    onClick={() => router.push("/")}
+                    className="px-6 py-2.5 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-md"
+                  >
+                    [ 返回首页 ]
+                  </button>
                 </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* 隐藏辅助触发按钮，用于自动跳过阶段 (Moved here to ensure it is always in the DOM) */}
+      <button
+        id="auto-start-trigger"
+        onClick={startConversation}
+        className="hidden"
+      />
     </main>
   );
 }

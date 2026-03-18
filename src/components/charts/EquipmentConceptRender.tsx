@@ -494,7 +494,7 @@ export const EquipmentConceptRender = ({
         {/* 主型号标题 */}
         <div className="absolute top-6 lg:top-10 left-6 lg:left-12 drop-shadow-md">
           <div className="text-[10px] text-brand-slate-400 mb-1">
-            深空探索星舰架构序列
+            专属感官物理设备蓝图
           </div>
           <div
             className="text-lg sm:text-2xl font-black text-white uppercase tracking-widest"
@@ -508,9 +508,9 @@ export const EquipmentConceptRender = ({
         </div>
 
         {/* 装甲材质引出框 */}
-        <div className="absolute top-[40%] left-6 lg:left-[10%] transform -translate-y-1/2">
+        <div className="absolute top-[40%] left-4 lg:left-8 transform -translate-y-1/2 max-w-[35%]">
           <div className="text-[10px] text-brand-slate-400 mb-0.5">
-            舰表涂装 (机体材质):
+            接驳介质 (推荐玩具材质):
           </div>
           <div
             className="text-xs sm:text-sm font-bold text-white tracking-wider"
@@ -521,9 +521,9 @@ export const EquipmentConceptRender = ({
         </div>
 
         {/* 核心温度引出框 */}
-        <div className="absolute top-[35%] right-6 lg:right-[15%] transform -translate-y-1/2 text-right">
+        <div className="absolute top-[35%] right-4 lg:right-8 transform -translate-y-1/2 text-right max-w-[35%]">
           <div className="text-[10px] text-brand-slate-400 mb-0.5">
-            核能供暖 (拟真发热):
+            维生热力学 (推荐加热温度):
           </div>
           <div
             className="text-xs sm:text-lg font-bold text-white tracking-wider"
@@ -534,9 +534,9 @@ export const EquipmentConceptRender = ({
         </div>
 
         {/* 曲率频率引出框 */}
-        <div className="absolute bottom-[20%] right-6 lg:right-[25%] transform translate-y-1/4 text-right">
+        <div className="absolute bottom-6 md:bottom-[15%] right-4 lg:right-8 transform text-right max-w-[40%]">
           <div className="text-[10px] text-brand-slate-400 mb-0.5">
-            曲率引擎 (震波频段):
+            神经共振频段 (推荐震动频率):
           </div>
           <div
             className="text-xs sm:text-lg font-bold text-white tracking-wider"

@@ -88,8 +88,10 @@ export default function ScenarioPage() {
   }, []);
 
   // 星空背景粒子
-  const stars = useMemo(
-    () =>
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setStars(
       Array.from({ length: 50 }).map(() => ({
         id: Math.random(),
         size: Math.random() * 2 + 1,
@@ -97,9 +99,9 @@ export default function ScenarioPage() {
         left: Math.random() * 100,
         dur: Math.random() * 6 + 10,
         delay: Math.random() * 2,
-      })),
-    [],
-  );
+      }))
+    );
+  }, []);
 
   // 根据性别偏好选择最佳声音
   const pickVoice = useCallback(

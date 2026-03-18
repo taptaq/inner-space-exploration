@@ -43,6 +43,14 @@ export function generatePartnerParams(user: AgentPayload): AgentPayload {
     tempPreference: partnerTemp,
     rhythmPerception: Math.round(partnerRhythm),
     hiddenNeed: partnerHidden,
+    recommendedPartner: {
+      username: `ECHO_#${Math.floor(Math.random() * 9000 + 1000)}`,
+      route: "lumina",
+      matchScore: 85 + Math.floor(Math.random() * 14),
+      title: "深空游荡者",
+      hook: partnerHidden,
+      briefIntroduction: "在无垠的宇宙中，寻找一个能够听懂沉默的频率。",
+    }
   };
 }
 

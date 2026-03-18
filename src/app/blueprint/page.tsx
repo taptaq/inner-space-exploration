@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
@@ -9,6 +9,7 @@ import { EquipmentConceptRender } from "@/components/charts/EquipmentConceptRend
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 
 /** 模拟试机按钮组件 */
+/*
 function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [pulseOpacity, setPulseOpacity] = useState(0);
@@ -58,7 +59,6 @@ function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
 
   return (
     <>
-      {/* 全屏脉冲覆盖层 */}
       {isSimulating && (
         <div
           className="fixed inset-0 z-[999] pointer-events-none transition-opacity duration-100"
@@ -79,6 +79,7 @@ function SimulationButton({ rhythm, temp }: { rhythm: number; temp: string }) {
     </>
   );
 }
+*/
 
 export default function BlueprintPage() {
   const router = useRouter();
@@ -86,13 +87,16 @@ export default function BlueprintPage() {
     (state) => state.getSerializedPayload,
   );
   const bestMatchUser = useAgentStore((state) => state.bestMatchUser);
+  const matchReason = useAgentStore((state) => state.matchReason);
   const [isRendered, setIsRendered] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
 
-  // 预生成星空背景粒子保持沉浸感
-  const stars = useMemo(
-    () =>
+  // 预生成星空背景粒子保持沉浸感 (Moved to useEffect to avoid hydration error)
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setStars(
       Array.from({ length: 60 }).map(() => ({
         id: Math.random(),
         width: Math.random() * 2 + 1,
@@ -101,9 +105,9 @@ export default function BlueprintPage() {
         animationDuration: Math.random() * 3 + 2,
         animationDelay: Math.random() * 2,
         opacity: Math.random() * 0.4 + 0.1,
-      })),
-    [],
-  );
+      }))
+    );
+  }, []);
 
   // 获取当前领航员数据并构造虚拟匹配对象的 Mock 数据
   const myPayload = getSerializedPayload();
@@ -147,7 +151,7 @@ export default function BlueprintPage() {
       ],
     },
     {
-      name: "匹配异星领航员参数",
+      name: "拦截未知信号源波段",
       value: [
         mockPartnerData.defenseLevel,
         tempToNum(mockPartnerData.tempPreference),
@@ -175,12 +179,17 @@ export default function BlueprintPage() {
   const freqMax = myPayload.rhythmPerception + 40;
   const defaultFreq = `${freqMin} - ${freqMax} Hz (曲率震动阈)`;
 
+  const fetchCalledRef = useRef(false);
+
   useEffect(() => {
     // 页面加载时的轻微延迟动画
     const timer = setTimeout(() => setIsRendered(true), 500);
 
-    // 发起大模型动态解读请求
+    // 发起大模型动态解读请求，使用 useRef 阻断 React Strict Mode 的重复调用
     const fetchAnalysis = async () => {
+      if (fetchCalledRef.current) return;
+      fetchCalledRef.current = true;
+
       try {
         const res = await fetch("/api/blueprint-analysis", {
           method: "POST",
@@ -256,22 +265,49 @@ export default function BlueprintPage() {
       </div>
 
       <div className="w-full max-w-5xl z-10 space-y-8 mt-10 sm:mt-0">
-        {/* 头部摘要 */}
-        <header className="border-l-4 border-brand-emerald-400 pl-4 sm:pl-6 py-2 relative z-10 bg-brand-slate-950/40 backdrop-blur-sm -ml-4 pr-4 sm:ml-0 shadow-sm rounded-r-md">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-widest uppercase mb-2 drop-shadow-lg flex items-center gap-2">
-            异星伴侣·双人感官同步蓝图{" "}
-            <span className="text-xs bg-brand-emerald-500/20 text-brand-emerald-400 px-2 py-0.5 rounded-sm border border-brand-emerald-500/50">
-              绝配方案
-            </span>
+        {/* 头部摘要: 神秘信号拦截 */}
+        <header className="border-l-4 border-brand-rose-500 pl-4 sm:pl-6 py-2 relative z-10 bg-brand-slate-950/40 backdrop-blur-sm -ml-4 pr-4 sm:ml-0 shadow-sm rounded-r-md">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-brand-rose-400 tracking-widest uppercase mb-2 drop-shadow-lg flex items-center gap-2 animate-pulse">
+            [系统拦截到高频类星体共振]
           </h1>
-          <div className="text-xs sm:text-sm font-bold text-brand-cyan-500 uppercase flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-4">
-            <span>双盲博弈: 灵魂契合度 99.8%</span>
+          <div className="text-xs sm:text-sm font-bold text-white uppercase flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-4">
+            <span className="text-brand-cyan-500">
+              波段解析契合度: 99.8% (极高纯度)
+            </span>
             <span className="hidden sm:inline text-brand-slate-500">|</span>
-            <span>
-              匹配到的异星伴侣:{" "}
-              {bestMatchUser ? bestMatchUser.username : "0x9F3E_SEC"}
+            <span className="text-brand-emerald-400">
+              未知信号源:{" "}
+              {bestMatchUser ? `UNKNOWN_ENTITY_#${bestMatchUser.username.slice(0, 4).toUpperCase()}` : "CLASSIFIED_SEC"}
             </span>
           </div>
+          <p className="mt-4 text-sm text-brand-slate-300 font-medium leading-relaxed max-w-2xl border-l-2 border-brand-slate-700 pl-3">
+            “领航员，在此前 3.4 亿光年的扫描中，从未见过如此相似的波段反馈。根据初步解译，对方同样在防线测试中表现出了惊人的戒备，且与你一样，偏好冰冷的恒温舱。
+            <br />
+            <br />
+            <span className="text-brand-emerald-400 font-bold block mb-2 text-md">
+               ⚠️ {matchReason ? `系统解码: "${matchReason}"` : "结论：在这片深空里，你绝对不是异类。"}
+            </span>
+          </p>
+          
+          {/* Add a direct portal link to the partner's SecondMe profile if available */}
+          {bestMatchUser && bestMatchUser.route && (
+            <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <a
+                href={`https://second-me.cn/${bestMatchUser.route}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 bg-brand-cyan-900/40 border border-brand-cyan-500/50 text-brand-cyan-300 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500 hover:text-brand-slate-900 transition-all rounded-sm flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                [ 开启舱门，登陆 Ta 的主页 ]
+              </a>
+              <span className="text-[10px] text-brand-slate-500 tracking-widest">
+                信号源已锁定，随时可发起物理接触。
+              </span>
+            </div>
+          )}
         </header>
 
         {/* 核心内容网格 */}
@@ -284,8 +320,9 @@ export default function BlueprintPage() {
             <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-cyan-500 rounded-tl-sm" />
             <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-cyan-500 rounded-tr-sm" />
 
-            <h2 className="text-sm text-brand-emerald-400 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2">
-              [ 几何层：多维张力雷达映射 ]
+            <h2 className="text-sm text-brand-emerald-400 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2 flex justify-between">
+              <span>[ 拦截信号雷达映射图 ]</span>
+              <span className="text-xs text-brand-rose-500 animate-pulse">正在尝试解密对方身份...</span>
             </h2>
             <BlueprintRadar indicator={radarIndicators} data={radarData} />
           </section>
@@ -348,10 +385,10 @@ export default function BlueprintPage() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                [ 分析层：你们为什么是天生一对？ ]
+                [ 共鸣特征提权解译：你们为何如此相似？ ]
               </h2>
 
               <div className="text-xs sm:text-sm text-brand-slate-300 leading-relaxed space-y-4">
@@ -426,21 +463,25 @@ export default function BlueprintPage() {
 
         {/* 底部功能盘 */}
         <footer className="pt-12 text-center space-y-4">
-          <SimulationButton
+          {/* <SimulationButton
             rhythm={myPayload.rhythmPerception}
             temp={myPayload.tempPreference}
           />
-          <br />
+          <br /> */}
           <button
             onClick={() => router.push("/match")}
-            className="px-8 py-3 border border-brand-emerald-500/50 text-brand-emerald-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-emerald-500/10 hover:shadow-[0_0_15px_rgba(52,211,153,0.2)] transition-all"
+            className="px-8 py-4 bg-brand-rose-500/10 border border-brand-rose-500 text-brand-rose-400 text-sm font-black tracking-[0.2em] relative overflow-hidden group hover:shadow-[0_0_25px_rgba(244,63,94,0.4)] transition-all glow-effect-intense"
           >
-            [ 🎰 盲盒配对 · 遇见你的异星灵魂 ]
+            <div className="absolute inset-0 bg-brand-rose-500/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
+            [ 尝试建立深空通信网络 ]
           </button>
+          <div className="text-xs text-brand-slate-500 uppercase tracking-widest mt-2">
+            ⚠️ 警告：连接可能导致未知的精神共振
+          </div>
           <br />
           <button
             onClick={() => router.push("/")}
-            className="px-8 py-3 bg-transparent border border-brand-cyan-500/50 text-brand-cyan-500 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
+            className="px-8 py-3 bg-transparent border border-brand-cyan-500/30 text-brand-cyan-600 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/5 hover:text-brand-cyan-400 transition-all mt-6"
           >
             [ 重启领航协议 ]
           </button>

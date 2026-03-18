@@ -46,8 +46,10 @@ export default function KnowledgePage() {
   }, []);
 
   // 背景粒子
-  const stars = useMemo(
-    () =>
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setStars(
       Array.from({ length: 40 }).map(() => ({
         id: Math.random(),
         size: Math.random() * 2 + 1,
@@ -55,9 +57,9 @@ export default function KnowledgePage() {
         left: Math.random() * 100,
         dur: Math.random() * 6 + 8,
         delay: Math.random() * 3,
-      })),
-    [],
-  );
+      }))
+    );
+  }, []);
 
   const filteredCards =
     activeCategory === "all"

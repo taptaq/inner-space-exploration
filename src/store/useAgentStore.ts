@@ -11,6 +11,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   discoverUsers: [],
   bestMatchUser: null,
   bestMatchScore: 0,
+  matchReason: undefined,
 
   // --- 状态突变接口 ---
   setDefenseLevel: (level) => set({ defenseLevel: level }),
@@ -21,6 +22,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   setDiscoverUsers: (users) => set({ discoverUsers: users }),
   setBestMatchUser: (user) => set({ bestMatchUser: user }),
   setBestMatchScore: (score) => set({ bestMatchScore: score }),
+  setMatchReason: (reason) => set({ matchReason: reason }),
 
   // --- 核心序列化与输出 ---
   getSerializedPayload: (): AgentPayload => {
@@ -33,6 +35,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       discoverUsers,
       bestMatchUser,
       bestMatchScore,
+      matchReason,
     } = get();
     return {
       defenseLevel,
@@ -43,6 +46,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       discoverUsers,
       bestMatchUser,
       bestMatchScore,
+      matchReason,
     };
   },
 }));

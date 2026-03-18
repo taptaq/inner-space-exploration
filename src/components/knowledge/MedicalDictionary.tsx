@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { KnowledgeCard } from "@/data/medicalKnowledge";
 
@@ -25,9 +25,20 @@ export function MedicalDictionary({
   const [tips, setTips] = useState<KnowledgeCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const fetchCalledRef = useRef(false);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     async function fetchKnowledge() {
+      setIsLoading(true);
+      setErrorMsg(null);
+      // Only prevent initial fetch if already called, but allow retries
+      if (fetchCalledRef.current && retryCount === 0) return;
+      fetchCalledRef.current = true;
+
       try {
         const res = await fetch("/api/knowledge/generate", {
           method: "POST",
@@ -70,7 +81,11 @@ export function MedicalDictionary({
     }
 
     fetchKnowledge();
-  }, [defenseLevel, tempPreference, rhythmPerception, hiddenNeed, profileData]);
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [defenseLevel, tempPreference, rhythmPerception, hiddenNeed, profileData, retryCount]);
 
   return (
     <section
@@ -131,14 +146,28 @@ export function MedicalDictionary({
         )}
       </div>
 
-      <div className="mt-4 text-center">
-        <button
-          onClick={() => router.push("/knowledge")}
-          className="text-[10px] text-brand-cyan-500 hover:text-brand-cyan-400 tracking-widest uppercase transition-colors"
-        >
-          [ 📚 探索更多深空医典 → ]
-        </button>
-      </div>
+
+      {errorMsg && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setRetryCount((c) => c + 1)}
+            className="px-4 py-2 border border-brand-rose-500/50 text-brand-rose-400 text-[10px] font-bold tracking-widest uppercase hover:bg-brand-rose-500/10 transition-colors rounded-sm"
+          >
+            [ 重新请求深空信号 ]
+          </button>
+        </div>
+      )}
+
+      {!errorMsg && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => router.push("/knowledge")}
+            className="text-[10px] text-brand-cyan-500 hover:text-brand-cyan-400 tracking-widest uppercase transition-colors"
+          >
+            [ 📚 探索更多深空医典 → ]
+          </button>
+        </div>
+      )}
     </section>
   );
 }

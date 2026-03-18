@@ -28,8 +28,10 @@ export default function Home() {
   }, []);
 
   // 预生成背景流星与星轨游离碎片
-  const particles = useMemo(
-    () =>
+  const [particles, setParticles] = useState<any[]>([]);
+
+  useEffect(() => {
+    setParticles(
       Array.from({ length: 30 }).map(() => ({
         id: Math.random(),
         size: Math.random() * 3 + 1,
@@ -37,9 +39,9 @@ export default function Home() {
         left: Math.random() * 100,
         duration: Math.random() * 10 + 10,
         delay: Math.random() * 5,
-      })),
-    [],
-  );
+      }))
+    );
+  }, []);
 
   // 还在检查登录状态时显示空白，避免闪烁
   if (isChecking) {

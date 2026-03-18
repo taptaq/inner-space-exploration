@@ -15,7 +15,7 @@ const LOG_MESSAGES = [
   { text: "节点博弈(0x2B): 共振频率严重干涉... 匹配失败，已震荡排斥", delay: 7500 },
   { text: "引力坍缩(): 发现同频极高契合目标 0x9F3E_SEC !", delay: 10000 },
   { text: "共振锁定(): 基因序列握手成功，建立引力羁绊链路", delay: 11500 },
-  { text: "系统输出(): 引力坍缩完成，生成《双生愉悦装备 BOM 通用图纸》", delay: 13500 },
+  { text: "系统输出(): 引力坍缩完成，生成《专属感官物理设备蓝图》", delay: 13500 },
 ];
 
 /** 简单的内联打字机组件 */
@@ -108,38 +108,68 @@ export default function ObservatoryPage() {
         }
       }
 
+      // 2. 调用大模型 AI 匹配接口
       let bestScore = 0;
       let bestMatch: RecommendedUser | null = null;
+      let matchReason = "";
+      let success = false;
 
-      if (discoverList.length > 0) {
-        discoverList.forEach(user => {
-          // 为了复用 existing 的打分逻辑，此处我们需要包装一个虚拟的 partner param
-          const tempPartner = generatePartnerParams(myPayload);
-          tempPartner.recommendedPartner = user;
-          
-          const score = calculateCompatibility(myPayload, tempPartner);
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = user;
-          }
+      try {
+        const aiRes = await fetch("/api/match-ai", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ myPayload })
         });
-      } else {
-        // 如果没有拉取到（如未登录或没数据），退化为随机兜底
-        bestScore = calculateCompatibility(myPayload, generatePartnerParams(myPayload));
+        
+        if (aiRes.ok) {
+            const data = await aiRes.json();
+            if (data.bestMatchUser && data.matchScore) {
+                bestScore = data.matchScore;
+                bestMatch = data.bestMatchUser;
+                success = bestScore >= 80;
+                matchReason = data.matchReason || "";
+            }
+        }
+      } catch (err) {
+        console.error("Match AI logic failed, falling back to random:", err);
+      }
+
+      // 3. Fallback matching if AI Failed (or ran out of candidates)
+      if (!bestMatch) {
+        if (discoverList.length > 0) {
+            discoverList.forEach(user => {
+            const tempPartner = generatePartnerParams(myPayload);
+            tempPartner.recommendedPartner = user;
+            const score = calculateCompatibility(myPayload, tempPartner);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = user;
+                success = bestScore >= 85;
+                matchReason = "基于引力频段计算的绝对契合指数。";
+            }
+            });
+        } else {
+            bestScore = calculateCompatibility(myPayload, generatePartnerParams(myPayload));
+            success = bestScore >= 85;
+            matchReason = "深空漫随机相遇协议";
+        }
       }
 
       setBestMatchScore(bestScore);
       setBestMatchUser(bestMatch);
+      // Ensure the store is updated with the reason so /blueprint can render it
+      useAgentStore.getState().setMatchReason(matchReason);
       
-      const success = bestScore >= 85;
       setIsMatchSuccess(success);
 
-      // 3. 根据结果安排动画时序排期排布日志
-      scheduleAnimations(success, activeTimeouts);
+      // 4. 根据结果安排动画时序排期排布日志
+      scheduleAnimations(success, matchReason, activeTimeouts);
     };
 
-    const scheduleAnimations = (success: boolean, timeouts: NodeJS.Timeout[]) => {
-      // 动画与日志时序逻辑与原来几乎相同，只是 success 变成了确定的布尔值
+    const scheduleAnimations = (success: boolean, reason: string, timeouts: NodeJS.Timeout[]) => {
       let dynamicLogs = [
         { text: "系统鉴权(200): 本我领航员特征池冻结", delay: 1000 },
         { text: "深空网桥(): 构建 3D 引力雷达网阵列...", delay: 2000 },
@@ -152,7 +182,8 @@ export default function ObservatoryPage() {
         dynamicLogs.push(
           { text: "引力坍缩(): 发现同频极高契合目标 0x9F3E_SEC !", delay: 10000 },
           { text: "共振锁定(): 基因序列握手成功，建立引力羁绊链路", delay: 11500 },
-          { text: "系统输出(): 引力坍缩完成，生成《双生愉悦装备 BOM 通用图纸》", delay: 13500 }
+          { text: `系统解构(): "${reason || "双生共鸣频率确认"}"`, delay: 13000 },
+          { text: "系统输出(): 引力坍缩完成，生成《专属感官物理设备蓝图》", delay: 15500 }
         );
       } else {
         dynamicLogs.push(
@@ -200,13 +231,13 @@ export default function ObservatoryPage() {
     };
   }, [router, getSerializedPayload, setProfileData, setDiscoverUsers, setBestMatchUser, setBestMatchScore]);
 
-  // 随机性数据计算
-  const randomOffsets = useMemo(
-    () => Array.from({ length: 12 }).map(() => Math.random()),
-    [],
-  );
-  const stars = useMemo(
-    () =>
+  // 随机性数据计算 (Moved to useEffect to fix hydration mismatch)
+  const [randomOffsets, setRandomOffsets] = useState<number[]>([]);
+  const [stars, setStars] = useState<any[]>([]);
+
+  useEffect(() => {
+    setRandomOffsets(Array.from({ length: 12 }).map(() => Math.random()));
+    setStars(
       Array.from({ length: 80 }).map(() => ({
         id: Math.random(),
         width: Math.random() * 2 + 1,
@@ -215,9 +246,9 @@ export default function ObservatoryPage() {
         animationDuration: Math.random() * 3 + 2,
         animationDelay: Math.random() * 2,
         opacity: Math.random() * 0.5 + 0.2,
-      })),
-    [],
-  );
+      }))
+    );
+  }, []);
 
   const targetId = 3;
   const mismatch1Id = 0;

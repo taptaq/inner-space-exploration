@@ -47,6 +47,11 @@ export interface AgentPayload {
    * 最佳匹配用户的契合度分数
    */
   bestMatchScore?: number;
+
+  /**
+   * AI 赋予的专属感官匹配判词
+   */
+  matchReason?: string;
 }
 
 export interface RecommendedUser {
@@ -85,6 +90,7 @@ export interface AgentState extends AgentPayload {
   setDiscoverUsers: (users: RecommendedUser[]) => void;
   setBestMatchUser: (user: RecommendedUser | null) => void;
   setBestMatchScore: (score: number) => void;
+  setMatchReason: (reason: string) => void;
   /**
    * 将当前状态剥离出行为函数，序列化为纯数据载体，准备送入失重舱（Phase 2）
    */
