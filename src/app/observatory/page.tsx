@@ -719,8 +719,8 @@ export default function ObservatoryPage() {
       </div>
 
       {/* 半透明玻璃态控制台 */}
-      <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-30 pointer-events-none">
-        <div className="bg-brand-slate-950/70 border border-brand-cyan-900/40 p-5 h-[35vh] sm:h-[40vh] overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.8)] font-mono text-xs sm:text-sm flex flex-col justify-end space-y-2.5 backdrop-blur-md rounded-sm">
+      <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[480px] lg:w-[600px] z-30 pointer-events-none">
+        <div className="bg-brand-slate-950/70 border border-brand-cyan-900/40 p-5 h-[35vh] sm:h-[40vh] overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.8)] font-mono text-xs sm:text-sm md:text-base flex flex-col justify-end space-y-2.5 backdrop-blur-md rounded-sm">
           {logs.map((log, index) => (
             <div
               key={index}

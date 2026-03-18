@@ -95,7 +95,8 @@ ${isSuperego ? superegoPrompt : idPrompt}
         return "（神经网络通讯拥堵...）";
       }
     },
-    [myPayload]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [] // Removed myPayload to prevent re-render loops. The safe reference is handled since myPayload shouldn't change mid-chat.
   );
 
   const getRandomReasoningLog = useCallback((role: "superego" | "id") => {
@@ -178,7 +179,8 @@ ${isSuperego ? superegoPrompt : idPrompt}
     }
 
     setPhase("done");
-  }, [myPayload, generateMessage, typewriterDisplay]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generateMessage, typewriterDisplay]); // Removed myPayload from dependencies to prevent re-render loop
 
   // Start chat automatically
   useEffect(() => {

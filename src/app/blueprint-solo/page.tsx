@@ -245,7 +245,7 @@ export default function BlueprintSoloPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.05)_0%,transparent_70%)] mix-blend-screen" />
       </div>
 
-      <div className="w-full max-w-md mx-auto z-10 space-y-8 mt-10 sm:mt-0">
+      <div className="w-full max-w-md md:max-w-6xl md:px-6 mx-auto z-10 space-y-8 mt-10 sm:mt-0">
         {/* 单人专属头部摘要 */}
         <header className="border-l-4 border-sky-400 pl-4 sm:pl-6 py-3 relative z-10 bg-brand-slate-950/60 backdrop-blur-md -ml-4 pr-4 sm:ml-0 shadow-sm rounded-r-md">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-widest uppercase mb-2 drop-shadow-lg flex items-center">
@@ -260,10 +260,10 @@ export default function BlueprintSoloPage() {
 
         {/* 核心内容网格 */}
         <div
-          className={`grid grid-cols-1 gap-8 transition-opacity duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
+          className={`grid grid-cols-1 md:grid-cols-12 gap-8 transition-opacity duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
         >
           {/* 左侧：具象化绝对安全边界极坐标图 */}
-          <section className="bg-brand-slate-900/50 border border-sky-900/40 rounded-sm p-4 sm:p-6 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <section className="md:col-span-5 lg:col-span-4 bg-brand-slate-900/50 border border-sky-900/40 rounded-sm p-4 sm:p-6 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)] md:sticky md:top-24 h-fit">
             <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-sky-500 rounded-tl-sm" />
             <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-sky-500 rounded-tr-sm" />
 
@@ -282,167 +282,167 @@ export default function BlueprintSoloPage() {
             </p>
           </section>
 
-          {/* 右侧：单人独立医学与工程批注 */}
-          <section className="space-y-6">
-            <div className="bg-brand-slate-900/50 border border-sky-900/40 p-4 sm:p-6 rounded-sm relative shadow-md">
-              <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-sky-500 rounded-bl-sm" />
-              <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-sky-500 rounded-br-sm" />
+          {/* 右侧：单人独立医学与工程批注 + 其他模块 */}
+          <section className="md:col-span-7 lg:col-span-8 flex flex-col gap-8">
+            <div className="space-y-6">
+              <div className="bg-brand-slate-900/50 border border-sky-900/40 p-4 sm:p-6 rounded-sm relative shadow-md">
+                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-sky-500 rounded-bl-sm" />
+                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-sky-500 rounded-br-sm" />
 
-              <h2 className="text-sm text-sky-300 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2">
-                [ 物理层：星舰拟真工程参数 ]
-              </h2>
-              <ul className="space-y-4 text-sm mt-6">
-                <li className="flex flex-col border-b border-brand-slate-800/50 pb-2">
-                  <div className="flex justify-between mb-1 items-start gap-4">
-                    <span className="text-brand-slate-500 shrink-0">
-                      核能供暖 (拟真发热)
+                <h2 className="text-sm text-sky-300 font-bold mb-4 tracking-widest uppercase border-b border-brand-slate-800 pb-2">
+                  [ 物理层：星舰拟真工程参数 ]
+                </h2>
+                <ul className="grid grid-cols-1 xl:grid-cols-2 gap-6 text-sm mt-6">
+                  <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 h-full">
+                    <div className="flex justify-between mb-1 items-start gap-4">
+                      <span className="text-brand-slate-500 shrink-0">
+                        核能供暖 (拟真发热)
+                      </span>
+                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                        {analysisData?.recommendedTemp || defaultTemp}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-sky-400/80 mt-auto pt-2 block border-t border-brand-slate-800/50">
+                      💡 设备会自动锁定在你最想要的这个温度，不需要别人的体温来温暖你。
                     </span>
-                    <span className="text-white font-bold tracking-tight text-right text-xs">
-                      {analysisData?.recommendedTemp || defaultTemp}
+                  </li>
+                  <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 h-full">
+                    <div className="flex justify-between mb-1 items-start gap-4">
+                      <span className="text-brand-slate-500 shrink-0">
+                        曲率引擎 (震波频段)
+                      </span>
+                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                        {analysisData?.recommendedFrequency || defaultFreq}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-sky-400/80 mt-auto pt-2 block border-t border-brand-slate-800/50">
+                      💡 完全按照你喜欢的频率节奏来震动，不用配合别人的节奏。
                     </span>
-                  </div>
-                  <span className="text-[10px] text-sky-400/80 mt-1">
-                    💡
-                    大白话：设备会自动锁定在你最想要的这个温度，不需要别人的体温来温暖你。
-                  </span>
-                </li>
-                <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 mt-3">
-                  <div className="flex justify-between mb-1 items-start gap-4">
-                    <span className="text-brand-slate-500 shrink-0">
-                      曲率引擎 (震波频段)
+                  </li>
+                  <li className="flex flex-col pb-2 xl:col-span-2 h-full">
+                    <div className="flex justify-between mb-1 items-start gap-4">
+                      <span className="text-brand-slate-500 shrink-0">
+                        舰表涂装 (机体材质)
+                      </span>
+                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                        {analysisData?.recommendedCmf || defaultCmf}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-sky-400/80 mt-auto pt-2 block border-t border-brand-slate-800/50">
+                      💡 因为你防线{myPayload.defenseLevel > 60 ? "较高" : "较低"}，极智中枢为你定制了如上的绝佳材质适配。
                     </span>
-                    <span className="text-white font-bold tracking-tight text-right text-xs">
-                      {analysisData?.recommendedFrequency || defaultFreq}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-sky-400/80 mt-1">
-                    💡
-                    大白话：完全按照你喜欢的频率节奏来震动，不用配合别人的节奏委屈自己。
-                  </span>
-                </li>
-                <li className="flex flex-col pb-2 mt-3">
-                  <div className="flex justify-between mb-1 items-start gap-4">
-                    <span className="text-brand-slate-500 shrink-0">
-                      舰表涂装 (机体材质)
-                    </span>
-                    <span className="text-white font-bold tracking-tight text-right text-xs">
-                      {analysisData?.recommendedCmf || defaultCmf}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-sky-400/80 mt-1">
-                    💡 大白话：因为你防线
-                    {myPayload.defenseLevel > 60 ? "较高" : "较低"}
-                    ，极智中枢为你定制了如上的绝佳材质适配。
-                  </span>
-                </li>
-              </ul>
-            </div>
+                  </li>
+                </ul>
+              </div>
 
-            <div className="bg-brand-slate-950 border border-brand-indigo-900/40 p-4 sm:p-6 rounded-sm shadow-md">
-              <h2 className="text-sm text-brand-indigo-400 font-bold mb-3 tracking-widest uppercase flex items-center justify-between">
-                <span className="flex items-center">
-                  <svg
-                    className="w-4 h-4 mr-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              <div className="bg-brand-slate-950 border border-brand-indigo-900/40 p-4 sm:p-6 rounded-sm shadow-md">
+                <h2 className="text-sm text-brand-indigo-400 font-bold mb-3 tracking-widest uppercase flex items-center justify-between">
+                  <span className="flex items-center">
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                      />
+                    </svg>
+                    [ 分析层：AI独立医学客座批注 ]
+                  </span>
+                  <button
+                    onClick={() => fetchAnalysis(true)}
+                    disabled={isLoadingAnalysis}
+                    className="text-brand-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="重新进行AI批注"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                    />
-                  </svg>
-                  [ 分析层：AI独立医学客座批注 ]
-                </span>
-                <button
-                  onClick={() => fetchAnalysis(true)}
-                  disabled={isLoadingAnalysis}
-                  className="text-brand-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="重新进行AI批注"
-                >
-                  <svg
-                    className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                </button>
-              </h2>
-              <div className="text-xs text-brand-slate-400/80 leading-relaxed space-y-4 mt-4">
-                {isLoadingAnalysis ? (
-                  <div className="flex flex-col gap-4 animate-pulse pt-2">
-                    <div>
-                      <div className="h-4 w-1/3 bg-sky-900/40 rounded mb-2"></div>
-                      <div className="h-3 w-5/6 bg-brand-slate-800/80 rounded mb-1"></div>
-                      <div className="h-3 w-full bg-brand-slate-800/80 rounded"></div>
+                    <svg
+                      className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </button>
+                </h2>
+                <div className="text-xs sm:text-sm text-brand-slate-400/80 leading-relaxed space-y-4 mt-4">
+                  {isLoadingAnalysis ? (
+                    <div className="flex flex-col gap-4 animate-pulse pt-2">
+                       <div className="space-y-2">
+                         <div className="h-4 w-1/3 bg-sky-900/40 rounded mb-2"></div>
+                         <div className="h-3 w-5/6 bg-brand-slate-800/80 rounded mb-1"></div>
+                         <div className="h-3 w-full bg-brand-slate-800/80 rounded"></div>
+                       </div>
+                       <div className="space-y-2">
+                         <div className="h-4 w-1/3 bg-brand-indigo-900/40 rounded mb-2"></div>
+                         <div className="h-3 w-4/5 bg-brand-slate-800/80 rounded mb-1"></div>
+                         <div className="h-3 w-2/3 bg-brand-slate-800/80 rounded"></div>
+                       </div>
                     </div>
-                    <div>
-                      <div className="h-4 w-1/3 bg-brand-indigo-900/40 rounded mb-2"></div>
-                      <div className="h-3 w-4/5 bg-brand-slate-800/80 rounded mb-1"></div>
-                      <div className="h-3 w-2/3 bg-brand-slate-800/80 rounded"></div>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p>
-                      <strong className="text-sky-300">👨‍⚕️ 医生诊断：</strong>
-                      {analysisData?.doctorDiagnosis}
-                    </p>
-                    <p>
-                      <strong className="text-sky-300">🛠️ 架构师建议：</strong>
-                      {analysisData?.engineerAnalysis}
-                    </p>
-                    {analysisData?.hiddenFeedback && myPayload.hiddenNeed && (
-                      <p className="text-brand-indigo-400/80 p-3 bg-brand-indigo-900/20 rounded-md border border-brand-indigo-900/40 mt-4">
-                        <strong className="text-brand-indigo-300 block mb-2">
-                          🔒 你的私密心愿破译：
-                        </strong>
-                        <span className="italic">"{myPayload.hiddenNeed}"</span>
-                        <br />
-                        <br />
-                        {analysisData.hiddenFeedback}
+                  ) : (
+                    <>
+                      <p>
+                        <strong className="text-sky-300">👨‍⚕️ 医生诊断：</strong>
+                        {analysisData?.doctorDiagnosis}
                       </p>
-                    )}
-                    <p className="text-sky-400 mt-6 font-bold border-t border-brand-slate-800 pt-3 inline-block text-sm">
-                      最终座右铭: &quot;我自己，即是宇宙最大的引力源。&quot;
-                    </p>
-                  </>
-                )}
+                      <p>
+                        <strong className="text-sky-300">🛠️ 架构师建议：</strong>
+                        {analysisData?.engineerAnalysis}
+                      </p>
+                      {analysisData?.hiddenFeedback && myPayload.hiddenNeed && (
+                        <p className="text-brand-indigo-400/80 p-4 bg-brand-indigo-900/20 rounded-md border border-brand-indigo-900/40 mt-4 shadow-inner">
+                          <strong className="text-brand-indigo-300 block mb-2 md:text-sm">
+                            🔒 你的私密心愿破译：
+                          </strong>
+                          <span className="italic">"{myPayload.hiddenNeed}"</span>
+                          <br />
+                          <br />
+                          {analysisData.hiddenFeedback}
+                        </p>
+                      )}
+                      <p className="text-sky-400 mt-6 font-bold border-t border-brand-slate-800 pt-4 flex flex-col md:flex-row md:items-center justify-between text-sm">
+                        <span>最终座右铭: &quot;我自己，即是宇宙最大的引力源。&quot;</span>
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
+
+            {/* 其他模块如内容推荐等可以作为右侧列中的后续区块 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-20">
+              <div className="h-full">
+                <ZhihuRecommendationsReal payload={myPayload} />
+              </div>
+              <div className="h-full">
+                <MedicalDictionary
+                  defenseLevel={myPayload.defenseLevel}
+                  tempPreference={myPayload.tempPreference}
+                  rhythmPerception={myPayload.rhythmPerception}
+                  hiddenNeed={myPayload.hiddenNeed}
+                  profileData={myPayload.profileData}
+                  className="border-sky-900/40 ring-1 ring-sky-500/20 h-full w-full"
+                />
+              </div>
+            </div>
+
+            {/* 孤寂深空：本我与超我的内生对话 变为一个极宽组件 */}
+            {isRendered && !isLoadingAnalysis && (
+              <div className="w-full">
+                <SoloInnerChat myPayload={myPayload} />
+              </div>
+            )}
           </section>
         </div>
-
-        {/* 全网同频共鸣 (取代原有设备图) */}
-        <div className="mt-8 relative z-20">
-          <ZhihuRecommendationsReal payload={myPayload} />
-        </div>
-
-        {/* 深空医学档案 */}
-        <div className="mt-8">
-          <MedicalDictionary
-            defenseLevel={myPayload.defenseLevel}
-            tempPreference={myPayload.tempPreference}
-            rhythmPerception={myPayload.rhythmPerception}
-            hiddenNeed={myPayload.hiddenNeed}
-            profileData={myPayload.profileData}
-            className="border-sky-900/40 ring-1 ring-sky-500/20"
-          />
-        </div>
-
-        {/* 孤寂深空：本我与超我的内生对话 */}
-        {isRendered && !isLoadingAnalysis && (
-          <SoloInnerChat myPayload={myPayload} />
-        )}
 
         {/* 底部功能盘 */}
         <footer className="pt-8 pb-16 text-center space-y-4">

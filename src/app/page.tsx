@@ -102,40 +102,45 @@ export default function Home() {
         </div>
 
         {/* 巨物感大标题 */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-brand-cyan-100 to-brand-cyan-600 tracking-tighter mb-4 drop-shadow-2xl">
-          内太空<span className="text-brand-slate-500 font-light mx-2">|</span>
+        <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-brand-cyan-100 to-brand-cyan-600 tracking-tighter mb-4 md:mb-6 drop-shadow-2xl">
+          内太空
+          <span className="text-brand-slate-500 font-light mx-2 md:mx-4">
+            |
+          </span>
           漫游
         </h1>
 
-        <p className="max-w-md mx-auto text-sm sm:text-base text-brand-slate-400 leading-relaxed mb-12 tracking-wide font-light">
+        <p className="max-w-md md:max-w-2xl mx-auto text-sm sm:text-base md:text-lg text-brand-slate-400 leading-relaxed mb-12 md:mb-16 tracking-wide flex flex-col items-center">
           在这里，你可以放心地输入身体探索时你隐秘的需求和癖好。
-          <br />
-          我们将为你寻找茫茫宇宙中{" "}
-          <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30 pb-0.5 font-bold">
-            与你频率契合的同类灵魂
+          <br className="hidden md:block" />
+          <span>
+            我们将为你寻找茫茫宇宙中{" "}
+            <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30 pb-0.5 font-bold">
+              与你频率契合的同类灵魂
+            </span>
+            ，或只为你构筑{" "}
+            <span className="text-sky-400 border-b border-sky-400/30 pb-0.5 font-bold">
+              专属你一个人
+            </span>{" "}
+            的私密乐园蓝图。
           </span>
-          ，或只为你构筑{" "}
-          <span className="text-sky-400 border-b border-sky-400/30 pb-0.5 font-bold">
-            专属你一个人
-          </span>{" "}
-          的私密乐园蓝图。
         </p>
 
         {/* CTA 双入口 */}
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-lg">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8 w-full max-w-lg md:max-w-3xl">
           {/* 主推入口：情境化直觉漫游 */}
           <div className="relative group flex-1">
             <div className="absolute -inset-1 bg-gradient-to-r from-brand-cyan-500 to-brand-emerald-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
             <Link
               href="/scenario"
-              className="relative flex items-center justify-center px-6 py-5 bg-brand-slate-950 text-white rounded-lg border border-brand-slate-800 leading-none group-hover:bg-brand-slate-900 transition-colors w-full"
+              className="relative flex items-center justify-center px-6 py-5 md:py-8 bg-brand-slate-950 text-white rounded-lg border border-brand-slate-800 leading-none group-hover:bg-brand-slate-900 transition-colors w-full h-full"
             >
               <div className="flex flex-col items-center">
-                <span className="text-sm font-bold tracking-widest uppercase text-brand-cyan-400 group-hover:text-white transition-colors">
+                <span className="text-sm md:text-lg font-bold tracking-widest uppercase text-brand-cyan-400 group-hover:text-white transition-colors">
                   [ 直觉 ]
                 </span>
-                <span className="text-[10px] text-brand-slate-500 mt-1">
-                  凭本能选择 · 推荐
+                <span className="text-[10px] md:text-xs text-brand-slate-500 mt-2">
+                  潜意识选择 · 推荐
                 </span>
               </div>
             </Link>
@@ -146,13 +151,13 @@ export default function Home() {
             <div className="absolute -inset-1 bg-gradient-to-r from-brand-cyan-500 to-brand-emerald-500 rounded-lg blur opacity-40 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
             <Link
               href="/onboarding"
-              className="relative flex items-center justify-center px-6 py-5 bg-brand-slate-950 text-white rounded-lg border border-brand-slate-800 leading-none group-hover:bg-brand-slate-900 transition-colors w-full"
+              className="relative flex items-center justify-center px-6 py-5 md:py-8 bg-brand-slate-950 text-white rounded-lg border border-brand-slate-800 leading-none group-hover:bg-brand-slate-900 transition-colors w-full h-full"
             >
               <div className="flex flex-col items-center">
-                <span className="text-sm font-bold tracking-widest uppercase text-brand-cyan-400 group-hover:text-white transition-colors">
+                <span className="text-sm md:text-lg font-bold tracking-widest uppercase text-brand-cyan-400 group-hover:text-white transition-colors">
                   [ 手控 ]
                 </span>
-                <span className="text-[10px] text-brand-slate-500 mt-1">
+                <span className="text-[10px] md:text-xs text-brand-slate-500 mt-2">
                   手动调参 · 高级
                 </span>
               </div>

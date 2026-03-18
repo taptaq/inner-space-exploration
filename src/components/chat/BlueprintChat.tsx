@@ -52,7 +52,7 @@ export function BlueprintChat({ myPayload, bestMatchUser }: BlueprintChatProps) 
   }, [messages, displayedText, isTyping]);
 
   const generateMessage = useCallback(
-    async (speakingRole: "self" | "partner", lastPartnerMessage: string): Promise<string> => {
+    async (speakingRole: "self" | "partner", lastPartnerMessage: string, currentStep: number): Promise<string> => {
       if (!partnerParams) return "";
       const selfPersona = buildPersona(myPayload, "self");
       const partnerPersona = buildPersona(partnerParams, "partner");
@@ -62,7 +62,7 @@ export function BlueprintChat({ myPayload, bestMatchUser }: BlueprintChatProps) 
       const systemPrompt = buildSystemPrompt(selfPersona, partnerPersona, speakingRole);
 
       let injectedZhihuTopic = "";
-      if (isSelf && messages.length >= 4 && !hasInjectedZhihuRef.current) {
+      if (isSelf && currentStep >= 4 && !hasInjectedZhihuRef.current) {
         hasInjectedZhihuRef.current = true;
         try {
           const query = myPayload.hiddenNeed?.slice(0, 10) || "亲密关系 试探";
@@ -119,7 +119,8 @@ export function BlueprintChat({ myPayload, bestMatchUser }: BlueprintChatProps) 
         return "（深空通讯暂时中断...）";
       }
     },
-    [myPayload, partnerParams, messages.length]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [partnerParams] // Removed myPayload and messages.length to prevent infinite reset loops
   );
 
   const getRandomReasoningLog = useCallback((role: "self" | "partner") => {
@@ -184,7 +185,7 @@ export function BlueprintChat({ myPayload, bestMatchUser }: BlueprintChatProps) 
       if (round === 0) {
         content = "（建立连接中...）终于找到你的频段了。这片深空中太安静了，你...也一直在找同一个频率的人吗？";
       } else {
-        content = await generateMessage(speakingRole, lastMessageContent);
+        content = await generateMessage(speakingRole, lastMessageContent, round);
       }
 
       if (chatAbortRef.current) break;
@@ -201,6 +202,7 @@ export function BlueprintChat({ myPayload, bestMatchUser }: BlueprintChatProps) 
     }
 
     setPhase("done");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerParams, generateMessage, typewriterDisplay]);
 
   // Start chat automatically when partnerParams are ready

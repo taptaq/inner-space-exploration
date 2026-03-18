@@ -236,194 +236,183 @@ export default function OnboardingPage() {
         <span>[ 返回上一级 ]</span>
       </button>
 
-      {/* 头部标题区 */}
-      <header
-        className={`z-10 w-full max-w-2xl mb-6 mt-10 sm:mt-0 flex flex-col gap-2 border-b border-brand-cyan-900/30 pb-4 transition-all duration-1000 ${isRendered ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
-      >
-        <div className="flex justify-between items-end">
-          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-brand-emerald-400 to-brand-cyan-500 py-1">
-            领航员_初始化
-          </h1>
-          <div className="flex items-center space-x-2 text-xs opacity-60">
-            <span>[状态]: 取样中</span>
-            <span className="w-1.5 h-1.5 bg-brand-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full shadow-[0_0_8px_rgba(52,211,153,1)]" />
-          </div>
-        </div>
-        <p className="text-xs sm:text-sm text-brand-slate-400 mt-1 max-w-xl">
-          抛开世俗面貌，注入你潜意识里最真实的生理反馈。
-        </p>
-      </header>
-
-      {/* 控制台表单区域 */}
-      {isInitialLoading ? (
-        <div className="z-10 w-full max-w-2xl flex flex-col items-center justify-center py-24 min-h-[400px]">
-          <div className="relative w-16 h-16 mb-6">
-            <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full animate-ping" />
-            <div className="absolute inset-0 border-4 border-t-brand-emerald-400 border-r-transparent rounded-full animate-spin" />
-            <div className="absolute inset-2 border-4 border-b-brand-cyan-400 border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite_reverse]" />
-          </div>
-          <p className="text-brand-cyan-400 text-sm tracking-[0.2em] uppercase font-bold animate-pulse">
-            [ 正在从深空潜意识网络同步您的最新档案... ]
-          </p>
-        </div>
-      ) : (
-        <div
-          className={`z-10 w-full max-w-2xl flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0"}`}
-        >
-        {/* Agent 智能档案初筛 */}
-        <button
-          onClick={handleAgentPrefill}
-          disabled={isScanning || isLaunching}
-          className={`group relative w-full overflow-hidden rounded-md border px-4 py-4 sm:py-5 flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(16,185,129,0.1)] hover:shadow-[0_4px_30px_rgba(16,185,129,0.2)] 
-            ${isScanning ? "border-brand-emerald-400 bg-brand-emerald-950/40 cursor-wait" : "border-brand-emerald-500/50 hover:border-brand-emerald-400 bg-brand-emerald-950/20"}`}
-        >
-          <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-brand-emerald-400/10 to-transparent -translate-x-full group-hover:animate-[slide_2s_ease-in-out_infinite]" />
-          <div className="relative flex items-center space-x-3">
-            {isScanning ? (
-              <span className="text-2xl animate-spin text-brand-emerald-400">
-                👁️
-              </span>
-            ) : (
-              <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">
-                👁️
-              </span>
-            )}
-            <span className="font-bold tracking-[0.2em] text-sm sm:text-base text-brand-emerald-400 group-hover:text-brand-emerald-300 transition-colors uppercase">
-              {isScanning
-                ? "[ 正在深度链接潜意识... ]"
-                : "Agent 深空档案侧写 // 一键智能注入"}
-            </span>
-          </div>
-        </button>
-
-        {aiReasoning && (
-          <div className="w-full bg-brand-emerald-950/20 border-l-2 border-brand-emerald-500 p-4 rounded-r-md animate-[fadeIn_0.5s_ease-out]">
-            <p className="text-brand-emerald-400/90 text-sm font-mono italic leading-relaxed whitespace-pre-wrap">
-              {aiReasoning}
+      {/* 居中大容器 (移动端单列，PC端分左右两列) */}
+      <div className="z-10 w-full max-w-2xl md:max-w-6xl mx-auto flex flex-col md:grid md:grid-cols-12 md:gap-12 md:items-start pt-10 md:pt-16 pb-20">
+        
+        {/* 左侧控制栏 (PC端固定滚动) */}
+        <div className="md:col-span-5 md:sticky md:top-24 flex flex-col gap-6 w-full">
+          {/* 头部标题区 */}
+          <header
+            className={`w-full mb-2 flex flex-col gap-2 border-b border-brand-cyan-900/30 pb-4 transition-all duration-1000 ${isRendered ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
+          >
+            <div className="flex justify-between items-end">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-widest bg-clip-text text-transparent bg-gradient-to-r from-brand-emerald-400 to-brand-cyan-500 py-1 drop-shadow-md">
+                领航员_初始化
+              </h1>
+              <div className="flex items-center space-x-2 text-xs opacity-60 md:hidden">
+                <span>[状态]: 取样中</span>
+                <span className="w-1.5 h-1.5 bg-brand-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full shadow-[0_0_8px_rgba(52,211,153,1)]" />
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm md:text-base text-brand-slate-400 mt-2 max-w-xl">
+              抛开世俗面貌，注入你潜意识里最真实的生理反馈。
             </p>
+          </header>
+
+          {/* PC端专有状态指示 */}
+          <div className="hidden md:flex items-center space-x-2 text-sm opacity-80 bg-brand-cyan-900/20 w-fit px-3 py-1.5 rounded-sm border border-brand-cyan-900/50">
+            <span>[状态]: 系统等待取样中</span>
+            <span className="w-2 h-2 bg-brand-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full shadow-[0_0_8px_rgba(52,211,153,1)]" />
           </div>
-        )}
 
-        {/* 参数板块：心理防线 */}
-        <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 rounded shadow-lg backdrop-blur-md">
-          <GeekSlider
-            label="防线等级 // 心理防御壁垒"
-            description="数值越高代表你越需求包裹与力量感，数值越低代表你需要足够的保留空间试探。"
-            value={defenseLevel}
-            min={0}
-            max={100}
-            step={1}
-            onChange={setDefenseLevel}
-          />
-        </section>
+          <div className={`flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}>
+            {/* Agent 智能档案初筛 */}
+            <button
+              onClick={handleAgentPrefill}
+              disabled={isScanning || isLaunching}
+              className={`group relative w-full overflow-hidden rounded-md border px-4 py-4 sm:py-5 flex items-center justify-center transition-all duration-300 shadow-[0_4px_20px_rgba(16,185,129,0.1)] hover:shadow-[0_4px_30px_rgba(16,185,129,0.2)] 
+                ${isScanning ? "border-brand-emerald-400 bg-brand-emerald-950/40 cursor-wait" : "border-brand-emerald-500/50 hover:border-brand-emerald-400 bg-brand-emerald-950/20"}`}
+            >
+              <div className="absolute inset-0 w-[200%] bg-gradient-to-r from-transparent via-brand-emerald-400/10 to-transparent -translate-x-full group-hover:animate-[slide_2s_ease-in-out_infinite]" />
+              <div className="relative flex items-center space-x-3">
+                {isScanning ? (
+                  <span className="text-2xl animate-spin text-brand-emerald-400">
+                    👁️
+                  </span>
+                ) : (
+                  <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">
+                    👁️
+                  </span>
+                )}
+                <span className="font-bold tracking-[0.2em] text-sm sm:text-base md:text-lg text-brand-emerald-400 group-hover:text-brand-emerald-300 transition-colors uppercase">
+                  {isScanning
+                    ? "[ 正在深度链接潜意识... ]"
+                    : "Agent 深空档案侧写"}
+                </span>
+              </div>
+            </button>
 
-        {/* 参数板块：温度偏好 */}
-        <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 rounded shadow-lg backdrop-blur-md">
-          <SegmentControl
-            label="核心温度 // 加热基准线"
-            description="喜欢冷艳高贵的冰凉刺激，还是毫无保留的熾热融化？"
-            options={TEMP_OPTIONS}
-            value={tempPreference}
-            onChange={setTempPreference}
-          />
-        </section>
-
-        {/* 参数板块：物理节奏感知 */}
-        <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 rounded shadow-lg backdrop-blur-md">
-          <GeekSlider
-            label="感知振频 (赫兹) // 物理节奏偏好"
-            description="从海浪般连绵舒缓的低频，到狂风骤雨般压迫的高频冲击。"
-            value={rhythmPerception}
-            min={10}
-            max={100}
-            step={5}
-            onChange={setRhythmPerception}
-          />
-        </section>
-
-        {/* 参数板块：隐性诉求与信号深空呼叫 */}
-        <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 rounded shadow-lg backdrop-blur-md flex flex-col space-y-3">
-          <label className="flex items-center text-sm font-bold tracking-widest text-brand-cyan-500 uppercase gap-2">
-            <span>隐秘诉求 // 碎片记录</span>
-            <span className="text-[10px] text-brand-rose-500 animate-pulse bg-brand-rose-500/10 px-2 py-0.5 rounded-sm">
-              {" "}
-              [已加密]{" "}
-            </span>
-          </label>
-          <div className="relative group p-[1px] focus-within:ring-1 focus-within:ring-brand-emerald-400/50 rounded transition-all duration-300">
-            <textarea
-              value={hiddenNeed}
-              onChange={(e) => setHiddenNeed(e.target.value)}
-              placeholder="有任何平时难以开口的特殊癖好吗？输入后将自动加密转化为内控参数..."
-              className="relative w-full h-24 sm:h-28 bg-brand-slate-950/90 border border-brand-slate-800 focus:border-transparent p-4 text-brand-emerald-400 font-mono text-sm resize-none outline-none placeholder:text-brand-slate-700 rounded shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] z-10"
-            />
+            {aiReasoning && (
+              <div className="w-full bg-brand-emerald-950/20 border-l-2 border-brand-emerald-500 p-4 rounded-r-md animate-[fadeIn_0.5s_ease-out]">
+                <p className="text-brand-emerald-400/90 text-sm md:text-base font-mono italic leading-relaxed whitespace-pre-wrap">
+                  {aiReasoning}
+                </p>
+              </div>
+            )}
           </div>
-        </section>
-      </div>
-      )}
 
-      {/* 底部启动防线动作栏 */}
-      {!isInitialLoading && (
-        <footer
-          className={`z-10 w-full max-w-2xl mt-12 pb-8 flex flex-col md:flex-row items-center justify-between transition-all duration-1000 delay-300 ${isRendered ? "opacity-100" : "opacity-0"}`}
-        >
-        <div className="text-xs text-brand-slate-400/60 mb-6 md:mb-0 flex-1">
-          <p className="font-bold text-brand-rose-500/80 mb-1">
-            【系统自检无异常】
-          </p>
+          {/* 发射动作栏 (移至左侧大栏下方) */}
+          <div className={`mt-4 md:mt-10 transition-all duration-1000 delay-300 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}>
+            <div className="text-xs md:text-sm text-brand-slate-400/60 mb-4">
+              <p className="font-bold text-brand-rose-500/80 mb-1">
+                【系统自检无异常】
+              </p>
+            </div>
+            <button
+              onClick={handleLaunch}
+              disabled={isLaunching}
+              className={`group relative px-10 py-5 md:py-6 w-full font-black tracking-widest text-brand-slate-950 uppercase cursor-pointer transition-all overflow-hidden ${
+                isLaunching
+                  ? "bg-brand-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.6)] animate-pulse"
+                  : "bg-brand-emerald-400 hover:bg-[#10b981] hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]"
+              }`}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-[200%] animate-[slide_1s_ease-in-out_infinite]" style={{ left: isLaunching ? "-100%" : "-200%" }} />
+              <span className="relative flex items-center justify-center gap-2 md:text-lg">
+                {isLaunching ? (
+                  <>
+                    <svg
+                      className="w-5 h-5 md:w-6 md:h-6 animate-spin text-brand-slate-950"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>[ 强引力封存脱水传输中... ]</span>
+                  </>
+                ) : (
+                  <span>[ 剥离地心引力 // 升空盲盒 ]</span>
+                )}
+              </span>
+            </button>
+          </div>
         </div>
 
-        <button
-          onClick={handleLaunch}
-          disabled={isLaunching}
-          className={`group shrink-0 relative px-10 py-5 w-full md:w-auto font-black tracking-widest text-brand-slate-950 uppercase cursor-pointer transition-all overflow-hidden ${
-            isLaunching
-              ? "bg-brand-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.6)] animate-pulse"
-              : "bg-brand-emerald-400 hover:bg-[#10b981] hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]"
-          }`}
-        >
-          {/* 发射时的强烈光带扫描 */}
-          {isLaunching && (
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-[200%] animate-[slide_1s_ease-in-out_infinite]"
-              style={{ left: "-100%" }}
-            />
-          )}
-          {!isLaunching && (
-            <span className="absolute left-0 h-full w-1 bg-white opacity-40 group-hover:w-full transition-all duration-300 pointer-events-none" />
-          )}
+        {/* 右侧表单区域 */}
+        <div className="md:col-span-7 w-full mt-6 md:mt-0 flex flex-col gap-6">
+          {isInitialLoading ? (
+            <div className="w-full flex flex-col items-center justify-center py-24 min-h-[400px]">
+              <div className="relative w-16 h-16 md:w-20 md:h-20 mb-6">
+                <div className="absolute inset-0 border-4 border-brand-cyan-900/40 rounded-full animate-ping" />
+                <div className="absolute inset-0 border-4 border-t-brand-emerald-400 border-r-transparent rounded-full animate-spin" />
+                <div className="absolute inset-2 border-4 border-b-brand-cyan-400 border-l-transparent rounded-full animate-[spin_1.5s_linear_infinite_reverse]" />
+              </div>
+              <p className="text-brand-cyan-400 text-sm md:text-base tracking-[0.2em] uppercase font-bold animate-pulse text-center px-4">
+                [ 正在从深空潜意识网络同步您的最新档案... ]
+              </p>
+            </div>
+          ) : (
+            <div className={`w-full flex flex-col gap-6 md:gap-8 transition-all duration-1000 delay-200 ${isRendered ? "opacity-100" : "opacity-0"}`}>
+              {/* 参数板块：心理防线 */}
+              <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 sm:p-8 rounded shadow-lg backdrop-blur-md">
+                <GeekSlider
+                  label="防线等级 // 心理防御壁垒"
+                  description="数值越高代表你越需求包裹与力量感，数值越低代表你需要足够的保留空间试探。"
+                  value={defenseLevel}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onChange={setDefenseLevel}
+                />
+              </section>
 
-          <span className="relative flex items-center justify-center gap-2">
-            {isLaunching ? (
-              <>
-                <svg
-                  className="w-5 h-5 animate-spin text-brand-slate-950"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span>[ 强引力封存脱水传输中... ]</span>
-              </>
-            ) : (
-              <span>[ 剥离地心引力 // 升空盲盒 ]</span>
-            )}
-          </span>
-        </button>
-      </footer>
-      )}
+              {/* 参数板块：温度偏好 */}
+              <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 sm:p-8 rounded shadow-lg backdrop-blur-md">
+                <SegmentControl
+                  label="核心温度 // 加热基准线"
+                  description="喜欢冷艳高贵的冰凉刺激，还是毫无保留的熾热融化？"
+                  options={TEMP_OPTIONS}
+                  value={tempPreference}
+                  onChange={setTempPreference}
+                />
+              </section>
+
+              {/* 参数板块：物理节奏感知 */}
+              <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 sm:p-8 rounded shadow-lg backdrop-blur-md">
+                <GeekSlider
+                  label="感知振频 (赫兹) // 物理节奏偏好"
+                  description="从海浪般连绵舒缓的低频，到狂风骤雨般压迫的高频冲击。"
+                  value={rhythmPerception}
+                  min={10}
+                  max={100}
+                  step={5}
+                  onChange={setRhythmPerception}
+                />
+              </section>
+
+              {/* 参数板块：隐性诉求与信号深空呼叫 */}
+              <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 sm:p-8 rounded shadow-lg backdrop-blur-md flex flex-col space-y-3 md:space-y-4">
+                <label className="flex items-center text-sm md:text-base font-bold tracking-widest text-brand-cyan-500 uppercase gap-2">
+                  <span>隐秘诉求 // 碎片记录</span>
+                  <span className="text-[10px] md:text-xs text-brand-rose-500 animate-pulse bg-brand-rose-500/10 px-2 py-0.5 rounded-sm">
+                    {" "}
+                    [已加密]{" "}
+                  </span>
+                </label>
+                <div className="relative group p-[1px] focus-within:ring-1 focus-within:ring-brand-emerald-400/50 rounded transition-all duration-300">
+                  <textarea
+                    value={hiddenNeed}
+                    onChange={(e) => setHiddenNeed(e.target.value)}
+                    placeholder="有任何平时难以开口的特殊癖好吗？输入后将自动加密转化为内控参数..."
+                    className="relative w-full h-24 sm:h-32 md:h-40 bg-brand-slate-950/90 border border-brand-slate-800 focus:border-transparent p-4 md:p-6 text-brand-emerald-400 font-mono text-sm md:text-base resize-none outline-none placeholder:text-brand-slate-700 rounded shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] z-10"
+                  />
+                </div>
+              </section>
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

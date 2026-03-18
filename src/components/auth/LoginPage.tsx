@@ -81,35 +81,36 @@ export default function LoginPage() {
           ))}
       </div>
 
-      {/* 主内容区 */}
       <div
-        className={`relative z-20 flex flex-col items-center max-w-sm w-full transition-all duration-1000 ${
+        className={`relative z-20 flex flex-col items-center max-w-sm md:max-w-lg w-full transition-all duration-1000 ${
           isRendered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
         }`}
       >
         {/* 状态指示 */}
-        <div className="mb-8 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-brand-cyan-900/30 bg-brand-slate-900/60 backdrop-blur-md">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,1)]" />
-          <span className="text-[10px] text-brand-emerald-400 font-bold tracking-widest uppercase">
+        <div className="mb-8 md:mb-10 inline-flex items-center gap-2 px-4 py-1.5 md:px-5 md:py-2 rounded-full border border-brand-cyan-900/30 bg-brand-slate-900/60 backdrop-blur-md">
+          <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-brand-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,1)]" />
+          <span className="text-[10px] md:text-xs text-brand-emerald-400 font-bold tracking-widest uppercase">
             系统就绪 · 等待身份接入
           </span>
         </div>
 
         {/* 标题区 */}
-        <h1 className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-brand-cyan-100 to-brand-cyan-600 tracking-tighter mb-2 drop-shadow-2xl">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white via-brand-cyan-100 to-brand-cyan-600 tracking-tighter mb-2 md:mb-4 drop-shadow-2xl">
           内太空
-          <span className="text-brand-slate-600 font-light mx-3">|</span>
+          <span className="text-brand-slate-600 font-light mx-3 md:mx-4">
+            |
+          </span>
           漫游
         </h1>
-        <p className="text-xs text-brand-slate-500 tracking-[0.4em] uppercase mb-3">
+        <p className="text-xs md:text-sm text-brand-slate-500 tracking-[0.4em] uppercase mb-3 md:mb-5">
           Inner Space Odyssey
         </p>
 
         {/* 分割线 */}
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-brand-cyan-500/50 to-transparent my-6" />
+        <div className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-brand-cyan-500/50 to-transparent my-6 md:my-8" />
 
         {/* 说明文字 */}
-        <p className="text-sm text-brand-slate-400 leading-relaxed mb-10 tracking-wide font-bold max-w-xs">
+        <p className="text-sm md:text-base text-brand-slate-400 leading-relaxed mb-10 md:mb-12 tracking-wide max-w-xs md:max-w-md">
           在这里，你将用自己的{" "}
           <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30">
             SecondMe 数字身份
@@ -120,17 +121,17 @@ export default function LoginPage() {
         </p>
 
         {/* 登录按钮 */}
-        <div className="relative group w-full">
+        <div className="relative group w-full md:w-11/12 mx-auto">
           {/* 发光外框 */}
           <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-cyan-500 to-brand-emerald-500 rounded-lg blur opacity-30 group-hover:opacity-70 transition duration-500" />
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="relative w-full py-4 px-6 bg-brand-slate-950 border border-brand-slate-800 rounded-lg text-brand-cyan-400 font-bold tracking-widest text-sm hover:bg-brand-slate-900 hover:text-white hover:border-brand-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="relative w-full py-4 md:py-5 px-6 bg-brand-slate-950 border border-brand-slate-800 rounded-lg text-brand-cyan-400 font-bold tracking-widest text-sm md:text-base hover:bg-brand-slate-900 hover:text-white hover:border-brand-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-3">
-                <span className="w-4 h-4 border-2 border-brand-cyan-500/30 border-t-brand-cyan-400 rounded-full animate-spin" />
+                <span className="w-4 h-4 md:w-5 md:h-5 border-2 border-brand-cyan-500/30 border-t-brand-cyan-400 rounded-full animate-spin" />
                 正在接入身份验证...
               </span>
             ) : (
@@ -140,7 +141,7 @@ export default function LoginPage() {
         </div>
 
         {/* 底部提示 */}
-        <p className="mt-6 text-[10px] text-brand-slate-600 tracking-wider">
+        <p className="mt-6 md:mt-8 text-[10px] md:text-xs text-brand-slate-600 tracking-wider">
           登录即表示你同意我们的服务条款与隐私政策
         </p>
       </div>

@@ -543,150 +543,97 @@ export default function ScenarioPage() {
       </div>
       <div className="flex-1 flex flex-col items-center justify-center pt-24 pb-32">
         <div
-          className={`relative z-10 max-w-md w-full flex flex-col items-center text-center transition-all duration-700
+          className={`relative z-10 max-w-md md:max-w-5xl w-full flex flex-col md:grid md:grid-cols-2 md:gap-16 md:items-center text-center md:text-left transition-all duration-700
             ${isTransitioning ? "opacity-0 blur-md scale-95 translate-y-8" : "opacity-100 blur-0 scale-100 translate-y-0"}
             ${isRendered ? "" : "opacity-0"}`}
         >
-          {/* 情境描述 */}
-          <div className="mb-6 sm:mb-8 px-4">
-            <p className="text-lg sm:text-xl md:text-2xl text-brand-slate-300 leading-relaxed font-light tracking-wide">
-              {currentScenario.scene}
-            </p>
+          {/* 左侧：情境描述与提示 */}
+          <div className="flex flex-col md:pr-8">
+            <div className="mb-6 sm:mb-8 px-4 md:px-0">
+              <p className="text-lg sm:text-xl md:text-3xl text-brand-slate-300 leading-relaxed font-light tracking-wide md:leading-snug">
+                {currentScenario.scene}
+              </p>
 
-            {/* 语音控制区 */}
-            <div className="mt-4 flex items-center justify-center gap-3">
-              {/* 语音播放按钮 */}
-              {/* <button
-              onClick={() => toggleSpeech(currentScenario.scene)}
-              className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full border transition-all duration-300 text-xs tracking-wider
-                ${isSpeaking
-                  ? "border-brand-cyan-400/60 bg-brand-cyan-950/40 text-brand-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                  : "border-brand-slate-700 bg-brand-slate-900/50 text-brand-slate-400 hover:border-brand-cyan-500/40 hover:text-brand-cyan-400"
-                }`}
-            >
-              {isSpeaking ? (
-                <>
-                  <svg className="w-4 h-4 animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                    <rect x="6" y="5" width="4" height="14" rx="1" />
-                    <rect x="14" y="5" width="4" height="14" rx="1" />
-                  </svg>
-                  <span>播放中…</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M17.95 6.05a8 8 0 010 11.9M6.5 8.5l5-4v15l-5-4H4a1 1 0 01-1-1v-5a1 1 0 011-1h2.5z" />
-                  </svg>
-                  <span>🔊 朗读情境</span>
-                </>
-              )}
-            </button> */}
+              {/* 语音控制区 */}
+              <div className="mt-4 flex items-center justify-center md:justify-start gap-3">
+              </div>
+            </div>
 
-              {/* 男/女声切换 */}
-              {/* <div className="inline-flex items-center rounded-full border border-brand-slate-700 bg-brand-slate-900/50 overflow-hidden text-[10px] tracking-wider">
-              <button
-                onClick={() => {
-                  stopSpeech();
-                  setVoiceGender("female");
-                }}
-                className={`px-3 py-2 transition-all duration-300 ${
-                  voiceGender === "female"
-                    ? "bg-brand-cyan-500/20 text-brand-cyan-400 font-bold"
-                    : "text-brand-slate-500 hover:text-brand-slate-300"
-                }`}
-              >
-                ♀ 女声
-              </button>
-              <div className="w-px h-4 bg-brand-slate-700" />
-              <button
-                onClick={() => {
-                  stopSpeech();
-                  setVoiceGender("male");
-                }}
-                className={`px-3 py-2 transition-all duration-300 ${
-                  voiceGender === "male"
-                    ? "bg-brand-cyan-500/20 text-brand-cyan-400 font-bold"
-                    : "text-brand-slate-500 hover:text-brand-slate-300"
-                }`}
-              >
-                ♂ 男声
-              </button>
-            </div> */}
+            {/* 口语化提示 */}
+            <div className="mb-8 sm:mb-10 px-6 md:px-0">
+              <p className="text-xs sm:text-sm md:text-base text-brand-slate-500 leading-relaxed tracking-wide italic border-l-2 border-brand-slate-800 md:pl-4 pl-0 border-none md:border-solid">
+                {currentScenario.hint}
+              </p>
             </div>
           </div>
 
-          {/* 口语化提示 */}
-          <div className="mb-8 sm:mb-10 px-6">
-            <p className="text-xs sm:text-sm text-brand-slate-500 leading-relaxed tracking-wide italic">
-              {currentScenario.hint}
+          {/* 右侧：核心问答 / 输入区 */}
+          <div className="flex flex-col w-full">
+            {currentScenario.isTextInput ? (
+              <div className="w-full flex flex-col items-center gap-6 px-4 md:px-0">
+                <textarea
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  placeholder="[ 记录你的极密档案... ]"
+                  className="w-full h-32 md:h-48 bg-slate-900/80 border border-slate-700 rounded-md p-4 text-slate-200 focus:outline-none focus:border-brand-cyan-500/60 transition-colors resize-none placeholder-slate-500 tracking-wider shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
+                />
+                <button
+                  onClick={handleTextSubmit}
+                  disabled={isTransitioning || !textInput.trim()}
+                  className="px-8 py-3 w-full sm:w-auto md:w-full border border-brand-cyan-500/50 text-brand-cyan-400 text-sm md:text-base font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(6,182,212,0.1)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.2)]"
+                >
+                  [ 封存并进入引力网 ]
+                </button>
+              </div>
+            ) : (
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-4 sm:gap-6 px-2 md:px-0">
+                {/* 选项 A */}
+                <button
+                  onClick={() => handleChoice("A")}
+                  disabled={isTransitioning}
+                  className={`group relative p-6 sm:p-8 md:p-10 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
+                ${
+                  chosenSide === "A"
+                    ? "border-brand-cyan-400 bg-brand-cyan-950/40 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-[1.02]"
+                    : chosenSide === "B"
+                      ? "border-brand-slate-800 opacity-30 scale-95"
+                      : "border-brand-slate-700 hover:border-brand-cyan-500/60 bg-brand-slate-900/30 hover:bg-brand-cyan-950/20 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                    {currentScenario.optionA?.text}
+                  </span>
+                </button>
+
+                {/* 选项 B */}
+                <button
+                  onClick={() => handleChoice("B")}
+                  disabled={isTransitioning}
+                  className={`group relative p-6 sm:p-8 md:p-10 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
+                ${
+                  chosenSide === "B"
+                    ? "border-brand-emerald-400 bg-brand-emerald-950/40 shadow-[0_0_30px_rgba(52,211,153,0.3)] scale-[1.02]"
+                    : chosenSide === "A"
+                      ? "border-brand-slate-800 opacity-30 scale-95"
+                      : "border-brand-slate-700 hover:border-brand-emerald-500/60 bg-brand-slate-900/30 hover:bg-brand-emerald-950/20 hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]"
+                }`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                    {currentScenario.optionB?.text}
+                  </span>
+                </button>
+              </div>
+            )}
+
+            {/* 底部提示 */}
+            <p className="mt-10 md:mt-6 text-xs text-brand-slate-600 tracking-widest animate-pulse md:text-center md:flex md:justify-center">
+              {currentScenario.isTextInput
+                ? "[ 探寻内心深处的渴望 ]"
+                : "[ 凭你的第一直觉选择 ]"}
             </p>
           </div>
-
-          {/* 核心问答 / 输入区 */}
-          {currentScenario.isTextInput ? (
-            <div className="w-full flex flex-col items-center gap-6 px-4">
-              <textarea
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder="[ 记录你的极密档案... ]"
-                className="w-full h-32 bg-slate-900/80 border border-slate-700 rounded-md p-4 text-slate-200 focus:outline-none focus:border-brand-cyan-500/60 transition-colors resize-none placeholder-slate-500 tracking-wider shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]"
-              />
-              <button
-                onClick={handleTextSubmit}
-                disabled={isTransitioning || !textInput.trim()}
-                className="px-8 py-3 w-full sm:w-auto border border-brand-cyan-500/50 text-brand-cyan-400 text-sm font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                [ 封存并进入引力网 ]
-              </button>
-            </div>
-          ) : (
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 px-2">
-              {/* 选项 A */}
-              <button
-                onClick={() => handleChoice("A")}
-                disabled={isTransitioning}
-                className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
-              ${
-                chosenSide === "A"
-                  ? "border-brand-cyan-400 bg-brand-cyan-950/40 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-[1.02]"
-                  : chosenSide === "B"
-                    ? "border-brand-slate-800 opacity-30 scale-95"
-                    : "border-brand-slate-700 hover:border-brand-cyan-500/60 bg-brand-slate-900/30 hover:bg-brand-cyan-950/20 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
-              }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-                  {currentScenario.optionA?.text}
-                </span>
-              </button>
-
-              {/* 选项 B */}
-              <button
-                onClick={() => handleChoice("B")}
-                disabled={isTransitioning}
-                className={`group relative p-6 sm:p-8 rounded-lg border text-left transition-all duration-500 cursor-pointer overflow-hidden
-              ${
-                chosenSide === "B"
-                  ? "border-brand-emerald-400 bg-brand-emerald-950/40 shadow-[0_0_30px_rgba(52,211,153,0.3)] scale-[1.02]"
-                  : chosenSide === "A"
-                    ? "border-brand-slate-800 opacity-30 scale-95"
-                    : "border-brand-slate-700 hover:border-brand-emerald-500/60 bg-brand-slate-900/30 hover:bg-brand-emerald-950/20 hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]"
-              }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
-                  {currentScenario.optionB?.text}
-                </span>
-              </button>
-            </div>
-          )}
-
-          {/* 底部提示 */}
-          <p className="mt-10 text-xs text-brand-slate-600 tracking-widest animate-pulse">
-            {currentScenario.isTextInput
-              ? "[ 探寻内心深处的渴望 ]"
-              : "[ 凭你的第一直觉选择 ]"}
-          </p>
         </div>
       </div>
 
