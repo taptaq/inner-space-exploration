@@ -6,7 +6,7 @@ export const config = {
 };
 
 // 如果本地遭遇代理软件劫持导致 SSL 握手失败 (ECONNRESET) 可强行跳过证书检验
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // API 请求辅助函数
 export async function secondmeApi(endpoint: string, options: RequestInit = {}) {
