@@ -5,25 +5,23 @@ import { useState, useEffect, useMemo } from "react";
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const [particles, setParticles] = useState<any[]>([]);
 
   useEffect(() => {
     setIsRendered(true);
-  }, []);
-
-  // 背景粒子
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 40 }).map(() => ({
+    // 使用 useEffect 在客户端统一生成粒子，修复 SSR 水合不匹配导致粒子不显示的问题
+    setParticles(
+      Array.from({ length: 80 }).map(() => ({
         id: Math.random(),
-        size: Math.random() * 2 + 0.5,
+        size: Math.random() * 2.5 + 0.8,
         top: Math.random() * 100,
         left: Math.random() * 100,
-        duration: Math.random() * 8 + 6,
-        delay: Math.random() * 4,
-        opacity: Math.random() * 0.5 + 0.2,
+        duration: Math.random() * 12 + 8,
+        delay: Math.random() * 5,
+        opacity: Math.random() * 0.6 + 0.2,
       })),
-    [],
-  );
+    );
+  }, []);
 
   const handleLogin = () => {
     setLoading(true);
@@ -53,21 +51,29 @@ export default function LoginPage() {
   return (
     <main className="relative min-h-screen bg-brand-slate-950 font-mono overflow-hidden flex flex-col items-center justify-center text-center px-6">
       {/* 背景层 */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* 全局暗黑网格 (Grid texture) */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.03)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_80%,transparent_100%)] z-0" />
+
         {/* 核心光晕 */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.06)_0%,transparent_60%)]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_50%)] mix-blend-screen" />
+
+        {/* 雷达扫描波纹 */}
+        <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-transparent via-brand-cyan-500/5 to-transparent blur-3xl animate-[pulse_8s_ease-in-out_infinite] transform translate-y-[20%]" />
+
         {/* 顶底渐变遮罩 */}
         <div className="absolute inset-0 bg-gradient-to-b from-brand-slate-950 via-transparent to-brand-slate-950 z-10" />
+
         {/* 星轨扫描圆 */}
-        <div className="absolute inset-0 border border-brand-slate-900/30 rounded-full w-[180vw] h-[180vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed animate-[spin_120s_linear_infinite]" />
-        <div className="absolute inset-0 border border-brand-cyan-900/10 rounded-full w-[120vw] h-[120vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed animate-[spin_80s_linear_infinite_reverse]" />
+        <div className="absolute inset-0 border border-brand-slate-700/30 rounded-full w-[200vw] h-[200vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed border-spacing-8 animate-[spin_180s_linear_infinite]" />
+        <div className="absolute inset-0 border border-brand-cyan-900/20 rounded-full w-[150vw] h-[150vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed border-spacing-4 animate-[spin_100s_linear_infinite_reverse]" />
 
         {/* 星辰粒子 */}
         {isRendered &&
           particles.map((p) => (
             <div
               key={p.id}
-              className="absolute rounded-full bg-brand-cyan-300 animate-[pulse_3s_ease-in-out_infinite]"
+              className="absolute rounded-full bg-brand-cyan-400 animate-pulse z-20"
               style={{
                 width: `${p.size}px`,
                 height: `${p.size}px`,
@@ -76,6 +82,7 @@ export default function LoginPage() {
                 opacity: p.opacity,
                 animationDuration: `${p.duration}s`,
                 animationDelay: `${p.delay}s`,
+                boxShadow: `0 0 ${p.size * 4}px rgba(6, 182, 212, 0.8)`,
               }}
             />
           ))}
@@ -109,15 +116,22 @@ export default function LoginPage() {
         {/* 分割线 */}
         <div className="w-16 md:w-24 h-px bg-gradient-to-r from-transparent via-brand-cyan-500/50 to-transparent my-6 md:my-8" />
 
-        {/* 说明文字 */}
-        <p className="text-sm md:text-base text-brand-slate-400 leading-relaxed mb-10 md:mb-12 tracking-wide max-w-xs md:max-w-md">
-          在这里，你将用自己的{" "}
-          <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30">
+        <p className="text-sm md:text-base text-center mx-auto text-brand-slate-400 leading-relaxed mb-10 md:mb-12 tracking-wide max-w-xs md:max-w-lg">
+          没有审判，只有共振。
+          <br className="hidden sm:block" />
+          请载入你的{" "}
+          <span className="text-brand-cyan-400 border-b border-brand-cyan-400/30 font-bold whitespace-nowrap">
             SecondMe 数字身份
           </span>{" "}
-          进入深空探索。
+          开启潜航。
           <br />
-          你的体验、偏好与记忆，将完整归属于你。
+          <span className="mt-3 inline-block">
+            交出那些难以启齿的诉求，这片深空会向你证明：
+            <br />
+            <span className="text-brand-slate-200 font-bold mt-1 inline-block drop-shadow-md">
+              你从来都不是异类，你只是在等待同类。
+            </span>
+          </span>
         </p>
 
         {/* 登录按钮 */}
