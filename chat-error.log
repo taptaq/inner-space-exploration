@@ -1,0 +1,5 @@
+{
+  "time": "2026-03-20T02:28:26.731Z",
+  "message": "Client network socket disconnected before secure TLS connection was established",
+  "response": "No response data"
+}

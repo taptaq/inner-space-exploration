@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 
 interface RootZhihuResponse {
   status: number;
@@ -29,42 +29,45 @@ interface ZhihuSearchItem {
 
 interface ZhihuRecommendationsProps {
   payload: any;
+  onDataReady?: (items: ZhihuSearchItem[]) => void;
 }
 
 export default function ZhihuRecommendations({
   payload,
+  onDataReady,
 }: ZhihuRecommendationsProps) {
   const [items, setItems] = useState<ZhihuSearchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Generate dynamic search query based on personality payload
-  const searchQuery = useMemo(() => {
+  const { defenseLevel, tempPreference, rhythmPerception } = payload || {};
+
+  // Store the active search query in state
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const generateQueries = useCallback(() => {
     const queries = [];
 
     // Core logic for selecting keyword based on payload
-    if (payload.defenseLevel && payload.defenseLevel > 70) {
+    if (defenseLevel && defenseLevel > 70) {
       queries.push("人际边界感", "享受独处", "内向者社交", "社交内耗");
-    } else if (payload.defenseLevel && payload.defenseLevel < 40) {
+    } else if (defenseLevel && defenseLevel < 40) {
       queries.push("高敏感人群", "真诚社交", "如何快速融入群体");
     }
 
-    if (payload.tempPreference) {
-      if (
-        payload.tempPreference.includes("极寒") ||
-        payload.tempPreference.includes("冷静")
-      ) {
+    if (tempPreference) {
+      if (tempPreference.includes("极寒") || tempPreference.includes("冷静")) {
         queries.push("极度理性", "冷静思考", "理性分析");
       } else if (
-        payload.tempPreference.includes("熔毁") ||
-        payload.tempPreference.includes("温热")
+        tempPreference.includes("熔毁") ||
+        tempPreference.includes("温热")
       ) {
         queries.push("情绪价值", "浪漫主义", "情感共鸣");
       }
     }
 
-    if (payload.rhythmPerception) {
-      if (payload.rhythmPerception > 70) {
+    if (rhythmPerception) {
+      if (rhythmPerception > 70) {
         queries.push("快节奏生活", "效率至上");
       } else {
         queries.push("慢生活", "松弛感", "内观");
@@ -76,39 +79,65 @@ export default function ZhihuRecommendations({
       queries.push("探索宇宙", "寻找自我", "孤独与自由");
     }
 
-    // Pick one random query to ensure freshness on reload
-    return queries[Math.floor(Math.random() * queries.length)];
-  }, [payload]);
+    return queries;
+  }, [defenseLevel, tempPreference, rhythmPerception]);
 
-  const fetchRecommendations = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/zhihu/search?query=${encodeURIComponent(searchQuery)}&count=4`,
-      );
-      if (!res.ok) {
-        throw new Error(`Failed to fetch: ${res.status}`);
+  const fetchRecommendations = useCallback(
+    async (queryToFetch: string) => {
+      if (!queryToFetch) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/zhihu/search?query=${encodeURIComponent(queryToFetch)}&count=4`,
+        );
+        if (!res.ok) {
+          throw new Error(`Failed to fetch: ${res.status}`);
+        }
+
+        const json: RootZhihuResponse = await res.json();
+
+        if (json.status === 0 && json.data && json.data.items) {
+          const fetchedItems = json.data.items.filter(Boolean).slice(0, 4);
+          setItems(fetchedItems);
+          if (onDataReady) onDataReady(fetchedItems);
+        } else {
+          throw new Error(json.msg || "Invalid response format from server");
+        }
+      } catch (err: any) {
+        setError(err.message || "获取知乎共鸣锚点失败");
+        console.error("Zhihu search error:", err);
+        if (onDataReady) onDataReady([]);
+      } finally {
+        setLoading(false);
       }
+    },
+    [onDataReady],
+  );
 
-      const json: RootZhihuResponse = await res.json();
-
-      if (json.status === 0 && json.data && json.data.items) {
-        setItems(json.data.items.filter(Boolean).slice(0, 4));
-      } else {
-        throw new Error(json.msg || "Invalid response format from server");
-      }
-    } catch (err: any) {
-      setError(err.message || "获取知乎共鸣锚点失败");
-      console.error("Zhihu search error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Initial setup and when deps change
   useEffect(() => {
-    fetchRecommendations();
-  }, [searchQuery]);
+    const queries = generateQueries();
+    const newQuery = queries[Math.floor(Math.random() * queries.length)];
+    setSearchQuery(newQuery);
+  }, [generateQueries]);
+
+  // Fetch when searchQuery explicitly changes
+  useEffect(() => {
+    if (searchQuery) {
+      fetchRecommendations(searchQuery);
+    }
+  }, [searchQuery, fetchRecommendations]);
+
+  const handleRefresh = () => {
+    const queries = generateQueries();
+    // try to pick a different one if possible
+    let newQuery = queries[Math.floor(Math.random() * queries.length)];
+    if (queries.length > 1 && newQuery === searchQuery) {
+      newQuery = queries.find((q: string) => q !== searchQuery) || newQuery;
+    }
+    setSearchQuery(newQuery);
+  };
 
   return (
     <div className="bg-brand-slate-900/50 border border-brand-cyan-900/30 p-4 sm:p-6 rounded-sm relative flex flex-col h-full min-h-[400px]">
@@ -140,7 +169,7 @@ export default function ZhihuRecommendations({
           </p>
         </div>
         <button
-          onClick={fetchRecommendations}
+          onClick={handleRefresh}
           disabled={loading}
           className="text-xs text-brand-slate-500 hover:text-brand-cyan-400 disabled:opacity-50 transition-colors p-1"
           title="重新扫描波段"
@@ -198,7 +227,7 @@ export default function ZhihuRecommendations({
               {error}
             </p>
             <button
-              onClick={fetchRecommendations}
+              onClick={handleRefresh}
               className="px-4 py-1.5 border border-brand-slate-700 text-brand-slate-300 text-[10px] hover:bg-brand-slate-800 hover:text-white transition-colors"
             >
               [ 重新连接信号塔 ]

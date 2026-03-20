@@ -19,11 +19,13 @@ const TOTAL_ROUNDS = 10;
 interface BlueprintChatProps {
   myPayload: AgentPayload;
   bestMatchUser: RecommendedUser | null;
+  zhihuItems?: any[] | null;
 }
 
 export function BlueprintChat({
   myPayload,
   bestMatchUser,
+  zhihuItems,
 }: BlueprintChatProps) {
   const [partnerParams, setPartnerParams] = useState<AgentPayload | null>(null);
   const [compatibility, setCompatibility] = useState(0);
@@ -115,19 +117,11 @@ export function BlueprintChat({
       let injectedZhihuTopic = "";
       if (isSelf && currentStep >= 2 && !hasInjectedZhihuRef.current) {
         hasInjectedZhihuRef.current = true;
-        try {
-          const query = myPayload.hiddenNeed?.slice(0, 10) || "亲密关系 试探";
-          const zRes = await fetch(
-            `/api/zhihu/search?query=${encodeURIComponent("两性 " + query)}&count=3`,
-          );
-          const zData = await zRes.json();
-          if (zData?.data?.length > 0) {
-            const item = zData.data[0];
-            injectedZhihuTopic =
-              item.target?.title || item.title || item.object?.title || "";
-          }
-        } catch (e) {
-          console.error("Agent Zhihu Injection Failed:", e);
+        
+        if (zhihuItems && zhihuItems.length > 0) {
+          const item = zhihuItems[Math.floor(Math.random() * zhihuItems.length)];
+          const rawTitle = item.target?.title || item.title || item.object?.title || "";
+          injectedZhihuTopic = rawTitle.replace(/<[^>]*>?/gm, "").trim();
         }
 
         // 极限保底机制：如果 API 请求失败或为空，强制使用备用话题池，确保体验百分百触发
@@ -191,7 +185,7 @@ export function BlueprintChat({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [partnerParams], // Removed myPayload and messages.length to prevent infinite reset loops
+    [partnerParams, zhihuItems], // Removed myPayload and messages.length to prevent infinite reset loops
   );
 
   const getRandomReasoningLog = useCallback((role: "self" | "partner") => {
@@ -295,9 +289,9 @@ export function BlueprintChat({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partnerParams, generateMessage, typewriterDisplay]);
 
-  // Start chat automatically when partnerParams are ready
+  // Start chat automatically when partnerParams and zhihu data are ready
   useEffect(() => {
-    if (partnerParams) {
+    if (partnerParams && zhihuItems !== null) {
       chatAbortRef.current = false;
       hasStartedChatRef.current = false;
       startConversation();
@@ -305,7 +299,7 @@ export function BlueprintChat({
     return () => {
       chatAbortRef.current = true;
     };
-  }, [partnerParams, startConversation]);
+  }, [partnerParams, zhihuItems, startConversation]);
 
   const isFullyUnlocked = phase === "done";
   const unlockProgress = isFullyUnlocked

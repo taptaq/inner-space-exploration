@@ -92,6 +92,7 @@ export default function BlueprintPage() {
   const [isRendered, setIsRendered] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
+  const [zhihuItems, setZhihuItems] = useState<any[] | null>(null);
 
   // 预生成星空背景粒子保持沉浸感 (Moved to useEffect to avoid hydration error)
   const [stars, setStars] = useState<any[]>([]);
@@ -483,7 +484,7 @@ export default function BlueprintPage() {
             {/* 其他模块如内容推荐等可以作为右侧列中的后续区块 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-20">
               <div className="h-full">
-                <ZhihuRecommendationsReal payload={myPayload} />
+                <ZhihuRecommendationsReal payload={myPayload} onDataReady={setZhihuItems} />
               </div>
               <div className="h-full">
                 <MedicalDictionary
@@ -503,7 +504,7 @@ export default function BlueprintPage() {
                ===================== */}
             {isRendered && !isLoadingAnalysis && (
               <div className="w-full mt-4">
-                <BlueprintChat myPayload={myPayload} bestMatchUser={bestMatchUser ?? null} />
+                <BlueprintChat myPayload={myPayload} bestMatchUser={bestMatchUser ?? null} zhihuItems={zhihuItems} />
               </div>
             )}
           </section>

@@ -13,9 +13,10 @@ const TOTAL_ROUNDS = 6;
 
 interface SoloInnerChatProps {
   myPayload: AgentPayload;
+  zhihuItems?: any[] | null;
 }
 
-export function SoloInnerChat({ myPayload }: SoloInnerChatProps) {
+export function SoloInnerChat({ myPayload, zhihuItems }: SoloInnerChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentRound, setCurrentRound] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
@@ -182,16 +183,18 @@ ${isSuperego ? superegoPrompt : idPrompt}
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [generateMessage, typewriterDisplay]); // Removed myPayload from dependencies to prevent re-render loop
 
-  // Start chat automatically
+  // Start chat automatically when zhihu data is ready
   useEffect(() => {
-    chatAbortRef.current = false;
-    hasStartedChatRef.current = false;
-    startConversation();
+    if (zhihuItems !== null) {
+      chatAbortRef.current = false;
+      hasStartedChatRef.current = false;
+      startConversation();
+    }
     
     return () => {
       chatAbortRef.current = true;
     };
-  }, [startConversation]);
+  }, [zhihuItems, startConversation]);
 
   const isFullyUnlocked = phase === "done";
   const unlockProgress = isFullyUnlocked ? 100 : Math.min(88, Math.round((messages.length / TOTAL_ROUNDS) * 88));

@@ -82,6 +82,7 @@ export default function BlueprintSoloPage() {
   const [isRendered, setIsRendered] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
+  const [zhihuItems, setZhihuItems] = useState<any[] | null>(null);
 
   // 预生成孤寂星空背景粒子保持沉浸感
   const [stars, setStars] = useState<any[]>([]);
@@ -421,7 +422,7 @@ export default function BlueprintSoloPage() {
             {/* 其他模块如内容推荐等可以作为右侧列中的后续区块 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-20">
               <div className="h-full">
-                <ZhihuRecommendationsReal payload={myPayload} />
+                <ZhihuRecommendationsReal payload={myPayload} onDataReady={setZhihuItems} />
               </div>
               <div className="h-full">
                 <MedicalDictionary
@@ -438,7 +439,7 @@ export default function BlueprintSoloPage() {
             {/* 孤寂深空：本我与超我的内生对话 变为一个极宽组件 */}
             {isRendered && !isLoadingAnalysis && (
               <div className="w-full">
-                <SoloInnerChat myPayload={myPayload} />
+                <SoloInnerChat myPayload={myPayload} zhihuItems={zhihuItems} />
               </div>
             )}
           </section>
