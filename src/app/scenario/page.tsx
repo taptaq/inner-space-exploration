@@ -5,6 +5,26 @@ import { useRouter } from "next/navigation";
 import { useAgentStore } from "@/store/useAgentStore";
 import { TempPreference } from "@/types/agent";
 
+const TypewriterText = ({ text, delay = 0, speed = 40 }: { text: string, delay?: number, speed?: number }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  useEffect(() => {
+    let i = 0;
+    setDisplayedText("");
+    const timeout = setTimeout(() => {
+      const interval = setInterval(() => {
+        setDisplayedText(text.substring(0, i + 1));
+        i++;
+        if (i >= text.length) {
+          clearInterval(interval);
+        }
+      }, speed);
+      return () => clearInterval(interval);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [text, delay, speed]);
+  return <span>{displayedText}</span>;
+}
+
 interface ScenarioTip {
   scenarioId: number;
   icon: string;
@@ -56,6 +76,8 @@ export default function ScenarioPage() {
   const [accTemp, setAccTemp] = useState<TempPreference>("恒温");
   const [accRhythm, setAccRhythm] = useState(50);
   const [accHidden, setAccHidden] = useState("");
+  
+  const [totalShips, setTotalShips] = useState(21439);
 
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
@@ -96,13 +118,21 @@ export default function ScenarioPage() {
           body: JSON.stringify({ profileData }),
         }).then((res) => res.json());
 
-        const [tipsData, prefillData] = await Promise.all([
+        const fetchStats = fetch("/api/stats")
+          .then((res) => res.json())
+          .catch(() => ({ totalUsers: 21439 }));
+
+        const [tipsData, prefillData, statsData] = await Promise.all([
           fetchTips,
           fetchPrefill,
+          fetchStats,
         ]);
 
         setDbScenarioTips(tipsData);
         setPrefillData(prefillData);
+        if (statsData?.totalUsers !== undefined) {
+          setTotalShips(statsData.totalUsers);
+        }
         setPhase("review");
         setIsLoading(false);
       } catch (err) {
@@ -643,33 +673,83 @@ export default function ScenarioPage() {
           const tip = dbScenarioTips.find(
             (t) => t.scenarioId === currentScenario.id,
           );
-          if (!tip) return null;
+          
+          let statsMessage = "";
+          if (currentScenario.id === 1) {
+             statsMessage = chosenSide === "A" 
+                ? `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 82.4% 的舰长做出了和你一样的选择。` 
+                : `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 17.6% 的舰长做出了和你一样的选择。`;
+          } else if (currentScenario.id === 2) {
+             statsMessage = chosenSide === "A" 
+                ? `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 35.8% 的舰长做出了和你一样的选择。` 
+                : `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 64.2% 的舰长做出了和你一样的选择。`;
+          } else if (currentScenario.id === 3) {
+             statsMessage = chosenSide === "A" 
+                ? `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 68.3% 的舰长做出了和你一样的选择。` 
+                : `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 31.7% 的舰长做出了和你一样的选择。`;
+          } else if (currentScenario.id === 4) {
+             statsMessage = chosenSide === "A" 
+                ? `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 41.5% 的舰长做出了和你一样的选择。` 
+                : `在目前启航的 ${totalShips.toLocaleString()} 艘星舰中，只有 58.5% 的舰长做出了和你一样的选择。`;
+          } else if (currentScenario.id === 5) {
+             statsMessage = `你的隐秘档案已封存。在目前检测到的 ${totalShips.toLocaleString()} 个灵魂样本中，你的诉求具备 99.9% 的绝对独立特征。`;
+          }
+
           return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-slate-950/60 backdrop-blur-sm">
-              <div className="max-w-md w-full bg-brand-slate-900/95 backdrop-blur-xl border border-brand-cyan-800/40 rounded-lg p-6 shadow-[0_0_40px_rgba(6,182,212,0.15)] animate-[fadeIn_0.5s_ease-out]">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{tip.icon}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-cyan-500/15 text-brand-cyan-400 font-bold tracking-widest uppercase">
-                    🔬 深空医典
-                  </span>
+            <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-brand-slate-950/70 backdrop-blur-md">
+              <div className="max-w-md w-full flex flex-col gap-4">
+                {/* 统计横幅 */}
+                {statsMessage && (
+                  <div className="bg-brand-slate-900/95 backdrop-blur-xl border border-brand-cyan-500/50 rounded-lg p-5 shadow-[0_0_30px_rgba(6,182,212,0.2)] animate-[fadeInDown_0.4s_ease-out]">
+                    <div className="flex items-center gap-2 mb-2">
+                       <span className="text-[10px] px-2 py-0.5 rounded-sm bg-brand-cyan-950/50 text-brand-cyan-400 font-bold tracking-widest uppercase border border-brand-cyan-900/50">
+                          [ 全网航行数据比对 ]
+                       </span>
+                    </div>
+                    <p className="text-sm font-bold text-brand-cyan-300 leading-relaxed tracking-wider font-mono">
+                      <TypewriterText text={statsMessage} speed={50} delay={100} />
+                    </p>
+                  </div>
+                )}
+                
+                {/* 原Tip浮层 */}
+                <div className="w-full bg-brand-slate-900/95 backdrop-blur-xl border border-brand-slate-800/60 rounded-lg p-6 shadow-2xl animate-[fadeInUp_0.5s_ease-out_0.2s_both]">
+                  {tip ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">{tip.icon}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-cyan-500/15 text-brand-cyan-400 font-bold tracking-widest uppercase">
+                          🔬 深空医典
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-white mb-2 tracking-wide">
+                        {tip.title}
+                      </h3>
+                      <p className="text-xs text-brand-slate-400 leading-relaxed mb-3">
+                        {tip.content}
+                      </p>
+                      <p className="text-[10px] text-brand-slate-600 italic mb-5">
+                        — {tip.source}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-2 relative">
+                      <div className="w-12 h-12 mb-4 border-2 border-brand-cyan-500/30 rounded-full border-t-brand-cyan-400 animate-spin" />
+                      <p className="text-xs font-bold text-brand-cyan-400 mb-6 tracking-widest text-center animate-pulse">
+                        [ 将您的选择坐标记录至主网 ]
+                      </p>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleNextFromTip}
+                    className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
+                  >
+                    {isLastQuestion
+                      ? "[ → 查看你的蓝图 ]"
+                      : `[ → 第 ${currentIndex + 2} 题 ]`}
+                  </button>
                 </div>
-                <h3 className="text-sm font-bold text-white mb-2 tracking-wide">
-                  {tip.title}
-                </h3>
-                <p className="text-xs text-brand-slate-400 leading-relaxed mb-3">
-                  {tip.content}
-                </p>
-                <p className="text-[10px] text-brand-slate-600 italic mb-5">
-                  — {tip.source}
-                </p>
-                <button
-                  onClick={handleNextFromTip}
-                  className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
-                >
-                  {isLastQuestion
-                    ? "[ → 查看你的蓝图 ]"
-                    : `[ → 第 ${currentIndex + 2} 题 ]`}
-                </button>
               </div>
             </div>
           );

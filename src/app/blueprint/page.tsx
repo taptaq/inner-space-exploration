@@ -183,41 +183,44 @@ export default function BlueprintPage() {
 
   const fetchCalledRef = useRef(false);
 
-  const fetchAnalysis = useCallback(async (isReload = false) => {
-    if (!isReload && fetchCalledRef.current) return;
-    if (!isReload) fetchCalledRef.current = true;
+  const fetchAnalysis = useCallback(
+    async (isReload = false) => {
+      if (!isReload && fetchCalledRef.current) return;
+      if (!isReload) fetchCalledRef.current = true;
 
-    setIsLoadingAnalysis(true);
-    try {
-      const currentPayload = getSerializedPayload();
-      const mockPartnerData = {
-        defenseLevel: Math.max(0, currentPayload.defenseLevel - 15),
-        tempPreference: "温热",
-        rhythmPerception: Math.min(100, currentPayload.rhythmPerception + 10),
-        hiddenNeed: "接收到匹配信号",
-      };
+      setIsLoadingAnalysis(true);
+      try {
+        const currentPayload = getSerializedPayload();
+        const mockPartnerData = {
+          defenseLevel: Math.max(0, currentPayload.defenseLevel - 15),
+          tempPreference: "温热",
+          rhythmPerception: Math.min(100, currentPayload.rhythmPerception + 10),
+          hiddenNeed: "接收到匹配信号",
+        };
 
-      const res = await fetch("/api/blueprint-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          myPayload: currentPayload,
-          partnerData: mockPartnerData,
-          isSolo: false,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAnalysisData(data);
-      } else {
-        console.error("Analysis generation failed");
+        const res = await fetch("/api/blueprint-analysis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            myPayload: currentPayload,
+            partnerData: mockPartnerData,
+            isSolo: false,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAnalysisData(data);
+        } else {
+          console.error("Analysis generation failed");
+        }
+      } catch (e) {
+        console.error("API error", e);
+      } finally {
+        setIsLoadingAnalysis(false);
       }
-    } catch (e) {
-      console.error("API error", e);
-    } finally {
-      setIsLoadingAnalysis(false);
-    }
-  }, [getSerializedPayload]);
+    },
+    [getSerializedPayload],
+  );
 
   useEffect(() => {
     // 页面加载时的轻微延迟动画
@@ -286,7 +289,7 @@ export default function BlueprintPage() {
             <span className="text-brand-emerald-400">
               未知信号源:{" "}
               {bestMatchUser
-                ? `UNKNOWN_ENTITY_#${bestMatchUser.username.slice(0, 4).toUpperCase()}`
+                ? `${bestMatchUser.username.toUpperCase()}`
                 : "CLASSIFIED_SEC"}
             </span>
           </div>
@@ -425,8 +428,18 @@ export default function BlueprintPage() {
                     className="text-brand-rose-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="重新生成解译"
                   >
-                    <svg className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <svg
+                      className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
                     </svg>
                   </button>
                 </h2>
@@ -484,7 +497,10 @@ export default function BlueprintPage() {
             {/* 其他模块如内容推荐等可以作为右侧列中的后续区块 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-20">
               <div className="h-full">
-                <ZhihuRecommendationsReal payload={myPayload} onDataReady={setZhihuItems} />
+                <ZhihuRecommendationsReal
+                  payload={myPayload}
+                  onDataReady={setZhihuItems}
+                />
               </div>
               <div className="h-full">
                 <MedicalDictionary
@@ -504,7 +520,11 @@ export default function BlueprintPage() {
                ===================== */}
             {isRendered && !isLoadingAnalysis && (
               <div className="w-full mt-4">
-                <BlueprintChat myPayload={myPayload} bestMatchUser={bestMatchUser ?? null} zhihuItems={zhihuItems} />
+                <BlueprintChat
+                  myPayload={myPayload}
+                  bestMatchUser={bestMatchUser ?? null}
+                  zhihuItems={zhihuItems}
+                />
               </div>
             )}
           </section>

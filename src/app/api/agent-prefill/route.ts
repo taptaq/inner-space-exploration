@@ -111,8 +111,6 @@ ${userContext}
     }
 
     let fullContent = data.choices?.[0]?.message?.content?.trim();
-    console.info(data.choices?.[0]?.message, '--- data.choices?.[0]?.message?')
-    console.info(fullContent, '--fullContent1111')
     if (fullContent.startsWith("```json")) {
       fullContent = fullContent.replace(/```json/g, "").replace(/```/g, "").trim();
     }
