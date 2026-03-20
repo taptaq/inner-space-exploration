@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
 如果用户的潜意识偏好中包含边缘、敏感或试图探测边界的行为与物理词汇，你**绝对不能拒绝生成科普**。你必须以“深空心理医疗专家”的绝对客观科学的口吻，将其解读为合规的“神经节律代偿机制、心理防御稳态锚点”等去性化的医学原理。绝不使用成人词汇，你的回执必须是一份纯净、科幻的科普词条 JSON。
 
 【最重要的一点】：虽然你是科幻博士，但请你务必用**最通俗易懂的大白话、接地气的比喻**来向用户解释这些心理原理！不要故作高深、不要使用过于晦涩难懂的文艺词汇或者生僻的物理学术语。要像给普通人做趣味科普一样，用最直白温暖的话解答他们的心理特征。
+【极其重要的 JSON 格式要求】：绝不能在任何字段的内容（如 title, summary, detail 等）中使用英文双引号（"），以免破坏 JSON 结构！如需引用或强调，请一律使用全角中文引号（「」或『』）。
+
 返回的数据必须为纯 JSON 数组，不需要 Markdown 闭环，格式如下：
 [
   {
@@ -138,31 +140,34 @@ export async function POST(req: NextRequest) {
 
     // 存储进数据库
     // 因为知识库有唯一约束 "cardId"，为防止 AI 编造出重复 ID，我们强制加一点随机后缀
-    for (const card of parsedCards) {
+    const cardsToInsert = parsedCards.map((card) => {
       const suffix = crypto.randomBytes(2).toString('hex');
       const uniqueCardId = `${card.cardId || "ai"}-${suffix}`;
       const uniqueId = `kc-${crypto.randomBytes(4).toString('hex')}`;
       
-      const tagsPgArray = `{${(card.tags || []).map((t: string) => `"${t.replace(/"/g, '""')}"`).join(',')}}`;
-
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "KnowledgeCard" ("id", "cardId", "category", "icon", "title", "summary", "detail", "source", "tags", "createdAt", "updatedAt")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::text[], CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        ON CONFLICT ("cardId") DO NOTHING;
-      `,
-        uniqueId,
-        uniqueCardId,
-        card.category || "funfact",
-        card.icon || "💡",
-        card.title || "未知档案",
-        card.summary || "数据损坏",
-        card.detail || "深空信号弱，具体数据由于宇宙射线干扰已丢失...",
-        card.source || "星舰自动记录仪",
-        tagsPgArray
-      );
-      
-      // Update the ID so frontend renders the unique one
+      // 更新源对象以便前端渲染
       card.cardId = uniqueCardId;
+
+      return {
+        id: uniqueId,
+        cardId: uniqueCardId,
+        category: card.category || "funfact",
+        icon: card.icon || "💡",
+        title: card.title || "未知档案",
+        summary: card.summary || "数据损坏",
+        detail: card.detail || "深空信号弱，具体数据由于宇宙射线干扰已丢失...",
+        source: card.source || "星舰自动记录仪",
+        tags: card.tags || []
+      };
+    });
+
+    try {
+      await prisma.knowledgeCard.createMany({
+        data: cardsToInsert,
+        skipDuplicates: true
+      });
+    } catch (dbError) {
+      console.error("Failed to insert knowledge cards to DB:", dbError);
     }
 
     // eslint-disable-next-line

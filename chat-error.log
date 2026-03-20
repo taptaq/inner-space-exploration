@@ -3,3 +3,8 @@
   "message": "Client network socket disconnected before secure TLS connection was established",
   "response": "No response data"
 }
+{
+  "time": "2026-03-20T16:00:32.528Z",
+  "message": "socket hang up",
+  "response": "No response data"
+}

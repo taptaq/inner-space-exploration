@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/secondme";
+import { encryptString, encryptJson } from "@/lib/encryption";
 
 export async function POST(req: NextRequest) {
   try {
@@ -62,16 +63,16 @@ export async function POST(req: NextRequest) {
         defenseLevel: defenseLevel !== undefined ? defenseLevel : currentUser.defenseLevel,
         tempPreference: tempPreference !== undefined ? tempPreference : currentUser.tempPreference,
         rhythmPerception: rhythmPerception !== undefined ? rhythmPerception : currentUser.rhythmPerception,
-        hiddenNeed: hiddenNeed !== undefined ? hiddenNeed : currentUser.hiddenNeed,
+        hiddenNeed: hiddenNeed !== undefined ? encryptString(hiddenNeed) : currentUser.hiddenNeed,
         
         bio: profileData?.info?.bio || currentUser.bio,
         selfIntroduction: profileData?.info?.selfIntroduction || currentUser.selfIntroduction,
         // 这里需要注意，如果在 discover API 我们映射对方名为 username，它实际上是 name 字段
         name: profileData?.info?.name || currentUser.name,
         
-        // 将 shades 和 softMemory 作为 JSON 持久化存储
-        shades: profileData?.shades ? (profileData.shades as any) : currentUser.shades,
-        softMemory: profileData?.softMemory ? (profileData.softMemory as any) : currentUser.softMemory,
+        // 将 shades 和 softMemory 作为 JSON 持久化存储，并经由系统级加密保护隐私
+        shades: profileData?.shades ? encryptJson(profileData.shades) : currentUser.shades,
+        softMemory: profileData?.softMemory ? encryptJson(profileData.softMemory) : currentUser.softMemory,
       },
     });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { config, secondmeApi, getCurrentUser } from "@/lib/secondme";
 import prisma from "@/lib/prisma";
+import { decryptString } from "@/lib/encryption";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
         defenseLevel: localUser.defenseLevel,
         tempPreference: localUser.tempPreference,
         rhythmPerception: localUser.rhythmPerception,
-        hiddenNeed: localUser.hiddenNeed,
+        hiddenNeed: decryptString(localUser.hiddenNeed || ""),
       } : null
     });
   } catch (error: any) {

@@ -57,9 +57,6 @@
 这是本系统最具实验性、最能规避人类直男/社恐交互障碍的创新环节。
 由系统生成属于玩家本人的 AI 分身，去替玩家进行“思想体检”或者“赛博相亲”。
 
-- **【模式 A：单机内心互搏】(SoloInnerChat)**
-  系统启动两个不同向位的内置特工模型：一个代表玩家的“绝对现实理智”，一个代表“本能的纯粹欲望”。由前端在屏幕中上演激烈的对话辩论。
-  _效果_：宛若脑内剧场，让玩家以上帝视角观看自己隐秘想法与理智的搏斗。
 - **【模式 B：双星博弈与知乎截获】(BlueprintChat)**
   系统在数据库中探测到高契合度真实玩家（基于欧几里得距离与余弦相似度算法 `matchUtils.ts`），并提取对方数据。
   **核心机制 - “知乎原生共鸣截获”**：
@@ -93,11 +90,33 @@
 关键实体：
 
 1. **User**: 包含了从 oauth 带回来的关联资料 JSON (shades, softMemory)，同时存储了其做完测试后入库的 defenseLevel、tempPreference 等指标。
-2. **KnowledgeCard & ScenarioTip**: 保存了知乎/医学相关的静态配置与场景选择提示。
+2. **KnowledgeCard & ScenarioTip**: 保存了医学相关的静态配置与场景选择提示。
+   - **深空医典 (RAG 基准线)**：`KnowledgeCard` 是我们正在构建的权威临床案例与医学期刊库。未来将结合 `pgvector` 等向量引擎实现 **RAG（检索增强生成）**，保证用户在查阅身体探索与心理医典时，所有知识完全去中心化并能追溯到真实的科学文献（如 The Lancet, DSM-5），规避流量社区的内容污染。
 
 ---
 
-## 🌟 4. 全局核心总结 (Summary for Integration)
+## 🛡️ 5. 安全与隐私架构 (Security & Privacy Architecture)
+
+鉴于本系统收集了大量极度敏感的用户心理参数与“隐秘癖好 (Hidden Need)”，我们从底层架构上实施了最严苛的现代隐私保护机制：
+
+### 5.1 数据分片与异地备份 (Data Sharding & Offsite Backup)
+
+- **多区域分片存储**：用户的常规资料与其极度敏感的测试参数将被打散存储在不同的地理区域节点（如使用 Supabase 的 Read Replicas 和跨区域备份机制）。
+- **PITR (Point-in-Time Recovery)**：数据库具备毫秒级的时间点灾备恢复能力，以抵御数据勒索或意外节点宕机。
+
+### 5.2 字段级非对称加密 (Field-Level Encryption)
+
+- 当用户提交 `hiddenNeed`（隐秘癖好）或关联 `softMemory`（软记忆）时，服务器在落盘 (写入 Prisma/Postgres) 之前，会通过 **AES-256-GCM** 对敏感字符串进行全量强加密。
+- 数据库中保存的仅是不可逆转的 base64 密文。大模型在进行 `BlueprintChat` 或 `SoloInnerChat` 推理时，唯有持有环境层级 `ENCRYPTION_KEY` 的后端 Node 环境才能在内存中进行微秒级解密和注入。
+
+### 5.3 差分隐私 (Differential Privacy)
+
+- **拉普拉斯噪声注入 (Laplace Mechanism)**：在前端的统计锚点展示中（例如：“在目前启航的 23,010 艘星舰中，只有 4.2% 的舰长作出了同样的抉择。”），其背后的聚合 API (`/api/stats`) 不会返回精确统计值。
+- 后端会自动对均值计算引入**随机噪声扰动**，保证攻击者绝对无法通过连续多维度的统计查询 (Intersection Attacks) 来逆向反推出任何一个特定舰长的真实选择倾向。
+
+---
+
+## 🌟 6. 全局核心总结 (Summary for Integration)
 
 无论你在开发什么新功能，请务必保证：
 

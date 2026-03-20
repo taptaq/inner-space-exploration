@@ -126,7 +126,7 @@ ${partnerBg}
     const requestData = {
       model,
       messages: apiMessages,
-      max_tokens: 800,
+      max_tokens: 3000,
       temperature: 0.85,
       top_p: 0.95,
     };
@@ -173,9 +173,6 @@ ${partnerBg}
       if (jsonMatch) {
          jsonStr = jsonMatch[0];
       }
-      // 防御模型输出未转义换行或带 markdown。将实际换行符替换为 \\n，避免 SyntaxError
-      jsonStr = jsonStr.replace(/```json/gi, "").replace(/```/g, "").trim();
-      jsonStr = jsonStr.replace(/\n(?! *[}\]])/g, "\\n");
       
       parsedContent = JSON.parse(jsonStr);
     } catch (e) {

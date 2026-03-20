@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { RecommendedUser, TempPreference } from "@/types/agent";
 import { getCurrentUser } from "@/lib/secondme";
+import { decryptString } from "@/lib/encryption";
 
 interface AiCandidate extends RecommendedUser {
   _defenseLevel?: number | null;
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
         _defenseLevel: u.defenseLevel,
         _tempPreference: u.tempPreference,
         _rhythmPerception: u.rhythmPerception,
-        _hiddenNeed: u.hiddenNeed,
+        _hiddenNeed: decryptString(u.hiddenNeed || ""),
       }));
     } else {
       console.warn("No active users found. Aborting AI Matchmaking.");

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { RecommendedUser } from "@/types/agent";
 import { getCurrentUser } from "@/lib/secondme";
-
+import { decryptString, decryptJson } from "@/lib/encryption";
 
 export async function GET(req: NextRequest) {
   try {
@@ -62,10 +62,10 @@ export async function GET(req: NextRequest) {
       defenseLevel: user.defenseLevel || 50,
       tempPreference: user.tempPreference || "恒温",
       rhythmPerception: user.rhythmPerception || 50,
-      hiddenNeed: user.hiddenNeed || "",
+      hiddenNeed: decryptString(user.hiddenNeed || ""),
       
-      shades: typeof user.shades === 'object' ? user.shades : [],
-      softMemory: typeof user.softMemory === 'object' ? user.softMemory : []
+      shades: typeof user.shades === 'object' ? user.shades : (user.shades ? decryptJson(user.shades.toString()) : []),
+      softMemory: typeof user.softMemory === 'object' ? user.softMemory : (user.softMemory ? decryptJson(user.softMemory.toString()) : [])
     }));
 
     return NextResponse.json({
