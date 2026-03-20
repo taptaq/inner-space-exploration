@@ -117,7 +117,7 @@ export default function KnowledgePage() {
       </div>
 
       {/* 头部 */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-6 pb-20">
+      <div className="relative z-10 max-w-4xl mx-auto px-4 pt-10 sm:pt-12 pb-20">
         {/* 返回按钮 */}
         <button
           onClick={() => router.back()}

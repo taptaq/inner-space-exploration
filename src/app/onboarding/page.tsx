@@ -75,7 +75,13 @@ export default function OnboardingPage() {
     };
 
     fetchLocalPrefs();
-  }, [router, setDefenseLevel, setTempPreference, setRhythmPerception, setHiddenNeed]);
+  }, [
+    router,
+    setDefenseLevel,
+    setTempPreference,
+    setRhythmPerception,
+    setHiddenNeed,
+  ]);
 
   // 预生成背景流星与星轨游离碎片 (与首页保持沉浸感统一)
   const [particles, setParticles] = useState<any[]>([]);
@@ -218,7 +224,7 @@ export default function OnboardingPage() {
       {/* 页面全局返回键 */}
       <button
         onClick={() => router.back()}
-        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 text-brand-slate-400 hover:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
+        className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 hover:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
       >
         <svg
           className="w-4 h-4"
@@ -238,7 +244,6 @@ export default function OnboardingPage() {
 
       {/* 居中大容器 (移动端单列，PC端分左右两列) */}
       <div className="z-10 w-full max-w-2xl md:max-w-6xl mx-auto flex flex-col md:grid md:grid-cols-12 md:gap-12 md:items-start pt-10 md:pt-16 pb-20">
-        
         {/* 左侧控制栏 (PC端固定滚动) */}
         <div className="md:col-span-5 md:sticky md:top-24 flex flex-col gap-6 w-full">
           {/* 头部标题区 */}
@@ -265,7 +270,9 @@ export default function OnboardingPage() {
             <span className="w-2 h-2 bg-brand-emerald-400 animate-[pulse_1.5s_ease-in-out_infinite] rounded-full shadow-[0_0_8px_rgba(52,211,153,1)]" />
           </div>
 
-          <div className={`flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}>
+          <div
+            className={`flex flex-col gap-6 transition-all duration-1000 delay-200 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}
+          >
             {/* Agent 智能档案初筛 */}
             <button
               onClick={handleAgentPrefill}
@@ -302,7 +309,9 @@ export default function OnboardingPage() {
           </div>
 
           {/* 发射动作栏 (移至左侧大栏下方) */}
-          <div className={`mt-4 md:mt-10 transition-all duration-1000 delay-300 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}>
+          <div
+            className={`mt-4 md:mt-10 transition-all duration-1000 delay-300 ${isRendered && !isInitialLoading ? "opacity-100" : "opacity-0 hidden"}`}
+          >
             <div className="text-xs md:text-sm text-brand-slate-400/60 mb-4">
               <p className="font-bold text-brand-rose-500/80 mb-1">
                 【系统自检无异常】
@@ -317,7 +326,10 @@ export default function OnboardingPage() {
                   : "bg-brand-emerald-400 hover:bg-[#10b981] hover:shadow-[0_0_20px_rgba(52,211,153,0.4)]"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-[200%] animate-[slide_1s_ease-in-out_infinite]" style={{ left: isLaunching ? "-100%" : "-200%" }} />
+              <div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-[200%] animate-[slide_1s_ease-in-out_infinite]"
+                style={{ left: isLaunching ? "-100%" : "-200%" }}
+              />
               <span className="relative flex items-center justify-center gap-2 md:text-lg">
                 {isLaunching ? (
                   <>
@@ -326,8 +338,19 @@ export default function OnboardingPage() {
                       fill="none"
                       viewBox="0 0 24 24"
                     >
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     <span>[ 强引力封存脱水传输中... ]</span>
                   </>
@@ -353,7 +376,9 @@ export default function OnboardingPage() {
               </p>
             </div>
           ) : (
-            <div className={`w-full flex flex-col gap-6 md:gap-8 transition-all duration-1000 delay-200 ${isRendered ? "opacity-100" : "opacity-0"}`}>
+            <div
+              className={`w-full flex flex-col gap-6 md:gap-8 transition-all duration-1000 delay-200 ${isRendered ? "opacity-100" : "opacity-0"}`}
+            >
               {/* 参数板块：心理防线 */}
               <section className="bg-brand-slate-900/60 border border-brand-slate-800/80 p-5 sm:p-8 rounded shadow-lg backdrop-blur-md">
                 <GeekSlider

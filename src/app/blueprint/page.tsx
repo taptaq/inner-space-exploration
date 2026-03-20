@@ -236,7 +236,7 @@ export default function BlueprintPage() {
       {/* 页面全局返回键 */}
       <button
         onClick={() => router.back()}
-        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 text-brand-slate-400 hover:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
+        className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 hover:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
       >
         <svg
           className="w-4 h-4"
