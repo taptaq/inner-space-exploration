@@ -8,6 +8,7 @@ import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
 import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 import { BlueprintChat } from "@/components/chat/BlueprintChat";
+import { ArchivePoster } from "@/components/share/ArchivePoster";
 
 /** 模拟试机按钮组件 */
 /*
@@ -93,6 +94,7 @@ export default function BlueprintPage() {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
   const [zhihuItems, setZhihuItems] = useState<any[] | null>(null);
+  const [showPoster, setShowPoster] = useState(false);
 
   // 预生成星空背景粒子保持沉浸感 (Moved to useEffect to avoid hydration error)
   const [stars, setStars] = useState<any[]>([]);
@@ -422,12 +424,19 @@ export default function BlueprintPage() {
                     </svg>
                     [ 共鸣特征提权解译：你们为何如此相似？ ]
                   </span>
-                  <button
-                    onClick={() => fetchAnalysis(true)}
-                    disabled={isLoadingAnalysis}
-                    className="text-brand-rose-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="重新生成解译"
-                  >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowPoster(true)}
+                      className="px-2 py-1 bg-brand-cyan-900/50 text-brand-cyan-300 text-[10px] sm:text-xs rounded border border-brand-cyan-500/50 hover:bg-brand-cyan-500 hover:text-slate-900 transition-colors"
+                    >
+                      [ 生成我的航行证 ]
+                    </button>
+                    <button
+                      onClick={() => fetchAnalysis(true)}
+                      disabled={isLoadingAnalysis}
+                      className="text-brand-rose-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="重新生成解译"
+                    >
                     <svg
                       className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
                       fill="none"
@@ -442,6 +451,7 @@ export default function BlueprintPage() {
                       />
                     </svg>
                   </button>
+                  </div>
                 </h2>
 
                 <div className="text-xs sm:text-sm text-brand-slate-300 leading-relaxed space-y-4">
@@ -540,6 +550,14 @@ export default function BlueprintPage() {
           </button>
         </footer>
       </div>
+      
+      {showPoster && (
+        <ArchivePoster
+          payload={myPayload}
+          analysisData={analysisData}
+          onClose={() => setShowPoster(false)}
+        />
+      )}
     </main>
   );
 }

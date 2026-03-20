@@ -8,6 +8,7 @@ import { BlueprintRadar } from "@/components/charts/BlueprintRadar";
 import ZhihuRecommendationsReal from "@/components/knowledge/ZhihuRecommendations";
 import { MedicalDictionary } from "@/components/knowledge/MedicalDictionary";
 import { SoloInnerChat } from "@/components/chat/SoloInnerChat";
+import { ArchivePoster } from "@/components/share/ArchivePoster";
 
 /** 模拟试机按钮组件 */
 /*
@@ -83,6 +84,7 @@ export default function BlueprintSoloPage() {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(true);
   const [zhihuItems, setZhihuItems] = useState<any[] | null>(null);
+  const [showPoster, setShowPoster] = useState(false);
 
   // 预生成孤寂星空背景粒子保持沉浸感
   const [stars, setStars] = useState<any[]>([]);
@@ -354,12 +356,19 @@ export default function BlueprintSoloPage() {
                     </svg>
                     [ 分析层：AI独立医学客座批注 ]
                   </span>
-                  <button
-                    onClick={() => fetchAnalysis(true)}
-                    disabled={isLoadingAnalysis}
-                    className="text-brand-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="重新进行AI批注"
-                  >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowPoster(true)}
+                      className="px-2 py-1 bg-sky-900/50 text-sky-300 text-[10px] sm:text-xs rounded border border-sky-500/50 hover:bg-sky-500 hover:text-slate-900 transition-colors"
+                    >
+                      [ 生成我的航行证 ]
+                    </button>
+                    <button
+                      onClick={() => fetchAnalysis(true)}
+                      disabled={isLoadingAnalysis}
+                      className="text-brand-indigo-500 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="重新进行AI批注"
+                    >
                     <svg
                       className={`w-4 h-4 ${isLoadingAnalysis ? "animate-spin" : ""}`}
                       fill="none"
@@ -374,6 +383,7 @@ export default function BlueprintSoloPage() {
                       />
                     </svg>
                   </button>
+                  </div>
                 </h2>
                 <div className="text-xs sm:text-sm text-brand-slate-400/80 leading-relaxed space-y-4 mt-4">
                   {isLoadingAnalysis ? (
@@ -455,6 +465,14 @@ export default function BlueprintSoloPage() {
           </button>
         </footer>
       </div>
+      
+      {showPoster && (
+        <ArchivePoster
+          payload={myPayload}
+          analysisData={analysisData}
+          onClose={() => setShowPoster(false)}
+        />
+      )}
     </main>
   );
 }

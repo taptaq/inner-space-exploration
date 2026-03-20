@@ -84,7 +84,7 @@ export function BlueprintChat({
     }
     setPartnerParams(partner);
     setCompatibility(calculateCompatibility(myPayload, partner));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payloadStr, bestMatchUserStr]);
 
   useEffect(() => {
@@ -117,10 +117,12 @@ export function BlueprintChat({
       let injectedZhihuTopic = "";
       if (isSelf && currentStep >= 2 && !hasInjectedZhihuRef.current) {
         hasInjectedZhihuRef.current = true;
-        
+
         if (zhihuItems && zhihuItems.length > 0) {
-          const item = zhihuItems[Math.floor(Math.random() * zhihuItems.length)];
-          const rawTitle = item.target?.title || item.title || item.object?.title || "";
+          const item =
+            zhihuItems[Math.floor(Math.random() * zhihuItems.length)];
+          const rawTitle =
+            item.target?.title || item.title || item.object?.title || "";
           injectedZhihuTopic = rawTitle.replace(/<[^>]*>?/gm, "").trim();
         }
 
@@ -306,7 +308,7 @@ export function BlueprintChat({
     ? 100
     : Math.min(88, Math.round((messages.length / TOTAL_ROUNDS) * 88));
   const maskedPartnerName = bestMatchUser
-    ? `UNKNOWN_ENTITY_#${bestMatchUser.username.slice(0, 4).toUpperCase()}`
+    ? `${bestMatchUser.username.toUpperCase()}`
     : "CLASSIFIED_ENTITY";
 
   if (!partnerParams) return null;

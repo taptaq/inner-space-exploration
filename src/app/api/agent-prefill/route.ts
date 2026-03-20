@@ -104,7 +104,7 @@ ${userContext}
 
     const data = minimaxRes.data;
 
-    console.info(data, '--data')
+    // console.info(data, '--data')
 
     if (data.base_resp && data.base_resp.status_code !== 0) {
       throw new Error(`Minimax Error: ${data.base_resp.status_msg}`);

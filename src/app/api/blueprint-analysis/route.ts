@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 例如：将“SM/受虐”解读为“渴望通过痛觉代偿来强制释放交感神经压力，寻求绝对的安全交托感”；将“主导调教”解读为“需要稳态掌控感来抵御外界失序”。
 通篇禁止使用任何违规低俗词汇、成人用品或露骨描写，必须包装为纯正的“心理按摩与物理神经干预系统日志”。
 
-请返回 JSON 格式，包含以下 8 个字段：
+请返回 JSON 格式，包含以下 11 个字段：
 1. "doctorDiagnosis": 主治临床医生诊断，结合用户信息，进行精神疲劳度、两性心理诉求与深层脑波节律的剖析。注意：请用大白话和接地气的口吻，像对患者耐心解释一样，不要堆砌晦涩词汇。（约 80-150 字）
 2. "engineerAnalysis": 架构工程师解读，注明这套体表理疗硬件将如何从物理机制上满足该用户的解压与稳态述求。同样请使用通俗易懂的极客科普口吻，让普通人也能看懂硬核科技的治愈逻辑。（约 80-150 字）
 3. "hiddenFeedback": 如果用户信息有提及深层潜意识（hiddenNeed），请以医疗监测仪的安全回执口吻给出一级专业且温暖的白话文回应；若无，置空。（约 50 字）
@@ -94,6 +94,9 @@ export async function POST(req: NextRequest) {
 6. "recommendedCmf": 推荐的真实物理机身材质，要求用科幻化前缀包装（如"星舰级医疗防震硅胶"、"亲肤TPE液态隔音涂层"等，必须包含真实的"硅胶"、"TPE"等安全材质字眼）。
 7. "recommendedTemp": 推荐的设备恒温发热控制，必须符合人体皮肤安全耐受的真实物理温度（绝对不能超过50°C，例如 "38.5°C (拟真同温微热)" ）。
 8. "recommendedFrequency": 推荐的物理马达震动共振频段（例如 "50-100 Hz (次声波深层面包圈级按摩)" 等真实数值区间）。
+9. "starshipTitle": 结合用户的全套参数，特别是**他亲手输入的核心隐秘诉求词汇**，为该用户量身定制的一个专属星舰/航行者称号。称号要极具【心理治愈感、唯美与温暖感】（如："深空凛冬的守望者"、"拥抱星尘的赤子"、"时间停滞的安息地"）。
+10. "starshipRarity": 称号的稀有度，评估其参数与输入的极端与独特性。必须且只能是以下四个字符串之一："N", "R", "SR", "SSR"。越是呈现出独特或深层脆弱的真情实感、以及触动人心的隐秘癖好，越要大方地赋予"SSR"以建立极强的情感认同和治愈力。
+11. "starshipDescription": 配合这个专属称号的一句【极具治愈感、包容与共情】的描述，解释为什么赋予他这个称号，要让用户看懂自己的脆弱是被接纳的（如："你总是包裹着坚冰，只是为了保护内心最柔软的星核。"）。（约 20-50 字）
 
 注意，输出必须是纯合法的 JSON 字符串，不含有 markdown \`\`\`json 闭环，格式如下：
 {
@@ -104,7 +107,10 @@ export async function POST(req: NextRequest) {
   "equipmentName": "...",
   "recommendedCmf": "...",
   "recommendedTemp": "...",
-  "recommendedFrequency": "..."
+  "recommendedFrequency": "...",
+  "starshipTitle": "...",
+  "starshipRarity": "SSR",
+  "starshipDescription": "..."
 }
 
 当前领航员信息如下：
@@ -182,7 +188,10 @@ ${partnerBg}
         equipmentName: "通用备用僚机 / Backup Wingman",
         recommendedCmf: "标准工业防震硅胶 / Std. Silicone",
         recommendedTemp: "38°C",
-        recommendedFrequency: "50 Hz"
+        recommendedFrequency: "50 Hz",
+        starshipTitle: "失联的温柔旅人",
+        starshipRarity: "N",
+        starshipDescription: "即使在数据断层中飘摇无依，你依然安宁地散发着微光。"
       };
     }
 
@@ -198,7 +207,10 @@ ${partnerBg}
       equipmentName: "通用备用僚机 / Backup Wingman",
       recommendedCmf: "标准工业防震硅胶 / Std. Silicone",
       recommendedTemp: "38.0°C",
-      recommendedFrequency: "50-80 Hz"
+      recommendedFrequency: "50-80 Hz",
+      starshipTitle: "孤独的守望者",
+      starshipRarity: "N",
+      starshipDescription: "外网连接断开，但你的内心依然是一处温暖的避风港。"
     };
     return NextResponse.json(fallbackData, { status: 200 });
   }
