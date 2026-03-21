@@ -557,7 +557,7 @@ export default function ScenarioPage() {
           stopSpeech();
           router.back();
         }}
-        className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 hover:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
+        className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 md:hover:text-brand-cyan-500 active:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
       >
         <svg
           className="w-4 h-4"
@@ -617,7 +617,7 @@ export default function ScenarioPage() {
                 <button
                   onClick={handleTextSubmit}
                   disabled={isTransitioning || !textInput.trim()}
-                  className="px-8 py-3 w-full sm:w-auto md:w-full border border-brand-cyan-500/50 text-brand-cyan-400 text-sm md:text-base font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(6,182,212,0.1)] hover:shadow-[0_4px_30px_rgba(6,182,212,0.2)]"
+                  className="px-8 py-3 w-full sm:w-auto md:w-full border border-brand-cyan-500/50 text-brand-cyan-400 text-sm md:text-base font-bold tracking-widest uppercase md:hover:bg-brand-cyan-500/10 active:bg-brand-cyan-500/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_20px_rgba(6,182,212,0.1)] md:hover:shadow-[0_4px_30px_rgba(6,182,212,0.2)] active:shadow-[0_4px_30px_rgba(6,182,212,0.2)]"
                 >
                   [ 封存并进入引力网 ]
                 </button>
@@ -634,11 +634,11 @@ export default function ScenarioPage() {
                     ? "border-brand-cyan-400 bg-brand-cyan-950/40 shadow-[0_0_30px_rgba(6,182,212,0.3)] scale-[1.02]"
                     : chosenSide === "B"
                       ? "border-brand-slate-800 opacity-30 scale-95"
-                      : "border-brand-slate-700 hover:border-brand-cyan-500/60 bg-brand-slate-900/30 hover:bg-brand-cyan-950/20 hover:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
-                }`}
+                      : "border-brand-slate-700 md:hover:border-brand-cyan-500/60 active:border-brand-cyan-500/60 bg-brand-slate-900/30 md:hover:bg-brand-cyan-950/20 active:bg-brand-cyan-950/20 md:hover:shadow-[0_0_20px_rgba(6,182,212,0.1)] active:shadow-[0_0_20px_rgba(6,182,212,0.1)]"
+                  }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan-500/5 to-transparent opacity-0 md:group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500" />
+                  <span className="relative text-sm sm:text-base text-brand-slate-300 md:group-hover:text-white group-active:text-white transition-colors leading-relaxed block">
                     {currentScenario.optionA?.text}
                   </span>
                 </button>
@@ -653,11 +653,11 @@ export default function ScenarioPage() {
                     ? "border-brand-emerald-400 bg-brand-emerald-950/40 shadow-[0_0_30px_rgba(52,211,153,0.3)] scale-[1.02]"
                     : chosenSide === "A"
                       ? "border-brand-slate-800 opacity-30 scale-95"
-                      : "border-brand-slate-700 hover:border-brand-emerald-500/60 bg-brand-slate-900/30 hover:bg-brand-emerald-950/20 hover:shadow-[0_0_20px_rgba(52,211,153,0.1)]"
-                }`}
+                      : "border-brand-slate-700 md:hover:border-brand-emerald-500/60 active:border-brand-emerald-500/60 bg-brand-slate-900/30 md:hover:bg-brand-emerald-950/20 active:bg-brand-emerald-950/20 md:hover:shadow-[0_0_20px_rgba(52,211,153,0.1)] active:shadow-[0_0_20px_rgba(52,211,153,0.1)]"
+                  }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <span className="relative text-sm sm:text-base text-brand-slate-300 group-hover:text-white transition-colors leading-relaxed block">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-emerald-500/5 to-transparent opacity-0 md:group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-500" />
+                  <span className="relative text-sm sm:text-base text-brand-slate-300 md:group-hover:text-white group-active:text-white transition-colors leading-relaxed block">
                     {currentScenario.optionB?.text}
                   </span>
                 </button>
@@ -758,7 +758,7 @@ export default function ScenarioPage() {
 
                   <button
                     onClick={handleNextFromTip}
-                    className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase hover:bg-brand-cyan-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
+                    className="w-full py-3 border border-brand-cyan-500/50 text-brand-cyan-400 text-xs font-bold tracking-widest uppercase md:hover:bg-brand-cyan-500/10 active:bg-brand-cyan-500/10 md:hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] active:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all rounded-md"
                   >
                     {isLastQuestion
                       ? "[ → 查看你的蓝图 ]"
