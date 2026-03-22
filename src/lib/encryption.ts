@@ -44,7 +44,7 @@ export function decryptString(text: string): string {
     
     return decrypted.toString('utf8');
   } catch (error) {
-    console.error("Decryption failed:", error);
+    // Silently fallback to raw string (expected for legacy unencrypted data or non-encrypted fields)
     return text; 
   }
 }

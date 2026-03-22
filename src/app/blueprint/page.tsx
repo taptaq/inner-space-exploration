@@ -366,31 +366,31 @@ export default function BlueprintPage() {
                 </h2>
                 <ul className="grid grid-cols-1 xl:grid-cols-2 gap-6 text-sm mt-6">
                   <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 h-full">
-                    <div className="flex justify-between mb-1 items-start gap-4">
-                      <span className="text-brand-slate-500 shrink-0">
+                    <div className="flex flex-col mb-1 items-start gap-1.5">
+                      <span className="text-brand-slate-500 shrink-0 mt-1">
                         核能供暖 (拟真发热)
                       </span>
-                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                      <span className="text-white font-bold tracking-tight text-left text-xs leading-relaxed">
                         {analysisData?.recommendedTemp || defaultTemp}
                       </span>
                     </div>
                   </li>
                   <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 h-full">
-                    <div className="flex justify-between mb-1 items-start gap-4">
-                      <span className="text-brand-slate-500 shrink-0">
+                    <div className="flex flex-col mb-1 items-start gap-1.5">
+                      <span className="text-brand-slate-500 shrink-0 mt-1">
                         舰表涂装 (机体材质)
                       </span>
-                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                      <span className="text-white font-bold tracking-tight text-left text-xs leading-relaxed">
                         {analysisData?.recommendedCmf || defaultCmf}
                       </span>
                     </div>
                   </li>
                   <li className="flex flex-col border-b border-brand-slate-800/50 pb-2 xl:col-span-2 h-full">
-                    <div className="flex justify-between mb-1 items-start gap-4">
-                      <span className="text-brand-slate-500 shrink-0">
+                    <div className="flex flex-col mb-1 items-start gap-1.5">
+                      <span className="text-brand-slate-500 shrink-0 mt-1">
                         曲率引擎 (震波频段)
                       </span>
-                      <span className="text-white font-bold tracking-tight text-right text-xs">
+                      <span className="text-white font-bold tracking-tight text-left text-xs leading-relaxed">
                         {analysisData?.recommendedFrequency || defaultFreq}
                       </span>
                     </div>

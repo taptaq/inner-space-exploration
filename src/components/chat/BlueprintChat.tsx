@@ -471,10 +471,10 @@ export function BlueprintChat({
               ) : (
                 <div className="w-full flex flex-col items-center animate-[fadeIn_0.5s_ease-out]">
                   <a
-                    href={`https://app.secondme.me/${bestMatchUser.username}`}
+                    href={`https://second.me/${bestMatchUser.route || bestMatchUser.username}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full text-center px-8 py-4 bg-brand-emerald-500 text-white text-sm font-black tracking-[0.2em] uppercase hover:bg-brand-emerald-400 hover:text-brand-slate-900 transition-all rounded shadow-[0_0_30px_rgba(16,185,129,0.5)] glow-effect-intense"
+                    className="w-full text-center px-8 py-4 bg-brand-emerald-500 text-white text-sm font-black tracking-[0.2em] uppercase md:hover:bg-brand-emerald-400 active:bg-brand-emerald-400 md:hover:text-brand-slate-900 active:text-brand-slate-900 transition-all rounded shadow-[0_0_30px_rgba(16,185,129,0.5)] glow-effect-intense"
                   >
                     [ 🛸 破仓汇合：登陆 Ta 的 SecondMe 基地 ]
                   </a>

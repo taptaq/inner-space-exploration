@@ -377,7 +377,20 @@ export default function ScenarioPage() {
 
   if (phase === "analyzing" || isLoading) {
     return (
-      <main className="min-h-screen bg-brand-slate-950 font-mono flex items-center justify-center relative overflow-hidden">
+      <main className="min-h-screen bg-brand-slate-950 font-mono flex flex-col items-center justify-center relative overflow-hidden">
+        {/* 返回上一级 */}
+        <button
+          onClick={() => {
+            stopSpeech();
+            router.back();
+          }}
+          className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 md:hover:text-brand-cyan-500 active:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>[ 返回上一级 ]</span>
+        </button>
         <div className="absolute inset-0 z-0 pointer-events-none">
           {stars.map((star) => (
             <div
@@ -385,8 +398,6 @@ export default function ScenarioPage() {
               className="absolute bg-white rounded-full opacity-50 animate-twinkle"
               style={{
                 width: `${star.size}px`,
-                height: `${star.size}px`,
-                top: `${star.top}%`,
                 left: `${star.left}%`,
                 animationDuration: `${star.dur}s`,
                 animationDelay: `${star.delay}s`,
@@ -426,6 +437,19 @@ export default function ScenarioPage() {
   if (phase === "review" && prefillData) {
     return (
       <main className="min-h-screen bg-brand-slate-950 font-mono text-white overflow-hidden relative flex flex-col items-center justify-center p-4">
+        {/* 返回上一级 */}
+        <button
+          onClick={() => {
+            stopSpeech();
+            router.back();
+          }}
+          className="absolute top-6 left-4 sm:top-8 sm:left-6 z-50 text-brand-slate-400 md:hover:text-brand-cyan-500 active:text-brand-cyan-500 flex items-center space-x-2 text-xs font-bold tracking-widest uppercase transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>[ 返回上一级 ]</span>
+        </button>
         <div className="absolute inset-0 z-0 opacity-30 pointer-events-none">
           {stars.map((star) => (
             <div
