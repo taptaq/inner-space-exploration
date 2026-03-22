@@ -9,6 +9,7 @@ import {
   generatePartnerParams,
 } from "@/lib/matchUtils";
 import { RecommendedUser } from "@/types/agent";
+import ParticleAstronautCanvas from '@/components/observatory/ParticleAstronaut';
 
 const LOG_MESSAGES = [
   { text: "系统鉴权(200): 本我领航员特征池冻结", delay: 1000 },
@@ -225,25 +226,40 @@ export default function ObservatoryPage() {
       await delay(1500);
       if (!mounted) return;
       
-      setPhase(2); // 接触 1
-      addLog("节点博弈(0x1A): 防线撕裂度过高... 匹配失败，已震荡排斥");
-      await delay(1200);
-      if (!mounted) return;
+      let isFetching = true;
+      let matchResult: any = null;
+      apiPromise.then(res => {
+        matchResult = res;
+        isFetching = false;
+      });
 
-      setPhase(2.5); // 弹开 1
-      await delay(1300);
-      if (!mounted) return;
+      let loopCount = 0;
+      // If network is slow, loop the probe/repulse animation so the screen doesn't just hang
+      while ((isFetching || loopCount < 1) && mounted) {
+        setPhase(2); // 接触 1
+        addLog(`节点博弈(0x${Math.floor(Math.random() * 1000 + 100).toString(16).toUpperCase()}): 防线撕裂度过高... 已震荡排斥`);
+        await delay(1200);
+        if (!mounted) return;
 
-      setPhase(3); // 接触 2
-      addLog("节点博弈(0x2B): 共振频率严重干涉... 匹配失败，已震荡排斥");
-      await delay(1300);
-      if (!mounted) return;
+        setPhase(2.5); // 弹开 1
+        await delay(1300);
+        if (!mounted) return;
 
-      setPhase(3.5); // 弹开 2
+        if (!isFetching && loopCount >= 1) break;
+
+        setPhase(3); // 接触 2
+        addLog(`节点博弈(0x${Math.floor(Math.random() * 1000 + 100).toString(16).toUpperCase()}): 共振频率严重干涉... 已震荡排斥`);
+        await delay(1300);
+        if (!mounted) return;
+
+        setPhase(3.5); // 弹开 2
+        await delay(1300);
+        if (!mounted) return;
+        
+        loopCount++;
+      }
       
-      // 前期视觉动画（约 7.8s）播完了，现在必须拿到匹配结果才能安排后续画面
-      // 如果网络快早出结果了，这里瞬间跳过。如果慢，这行会等网络结束。
-      const matchResult = await apiPromise;
+      if (!matchResult) matchResult = await apiPromise;
       if (!mounted || !matchResult) return;
       
       const { success, matchReason } = matchResult;
@@ -305,21 +321,9 @@ export default function ObservatoryPage() {
 
   // 随机性数据计算 (Moved to useEffect to fix hydration mismatch)
   const [randomOffsets, setRandomOffsets] = useState<number[]>([]);
-  const [stars, setStars] = useState<any[]>([]);
 
   useEffect(() => {
     setRandomOffsets(Array.from({ length: 12 }).map(() => Math.random()));
-    setStars(
-      Array.from({ length: 80 }).map(() => ({
-        id: Math.random(),
-        width: Math.random() * 2 + 1,
-        top: Math.random() * 100,
-        left: Math.random() * 100,
-        animationDuration: Math.random() * 3 + 2,
-        animationDelay: Math.random() * 2,
-        opacity: Math.random() * 0.5 + 0.2,
-      })),
-    );
   }, []);
 
   const targetId = 3;
@@ -532,25 +536,7 @@ export default function ObservatoryPage() {
         <span>[ 终止并返回上一级 ]</span>
       </button>
 
-      {/* 背景星空层 */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {stars.map((star) => (
-          <div
-            key={star.id}
-            className="absolute bg-white rounded-full animate-pulse blur-[1px]"
-            style={{
-              width: `${star.width}px`,
-              height: `${star.width}px`,
-              top: `${star.top}%`,
-              left: `${star.left}%`,
-              opacity: star.opacity,
-              animationDuration: `${star.animationDuration}s`,
-              animationDelay: `${star.animationDelay}s`,
-            }}
-          />
-        ))}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.05)_0%,transparent_80%)] mix-blend-screen" />
-      </div>
+      <ParticleAstronautCanvas phase={phase} />
 
       {/* 头部状态机 */}
       <header className="relative z-20 flex flex-col sm:flex-row sm:justify-between items-start mt-12 sm:mt-0 gap-4 font-bold border-b border-brand-slate-800 pb-4">
@@ -579,243 +565,10 @@ export default function ObservatoryPage() {
         </div>
       </header>
 
-      {/* ================= 动态太空 3D 博弈核心视效层 ================= */}
-      <div
-        className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center overflow-hidden transition-transform duration-[4000ms] ease-out"
-        style={{ perspective: "1200px", transform: globalCameraStyle }}
-      >
-        {/* 雷达底盘 / 全息层面 */}
-        <div
-          className="relative w-[95vw] h-[95vw] max-w-[800px] max-h-[800px] border border-brand-cyan-900/40 rounded-full transition-transform duration-[3000ms] ease-out shadow-[0_20px_50px_rgba(6,182,212,0.2)]"
-          style={{
-            transform:
-              phase >= 1
-                ? "rotateX(65deg) scale(1)"
-                : "rotateX(0deg) scale(0.1)",
-            transformStyle: "preserve-3d",
-            backgroundColor: "rgba(6, 182, 212, 0.02)",
-          }}
-        >
-          {/* 雷达扫描光带特效 (Scanlines) */}
-          {phase >= 1 && phase < 4 && phase !== -2 && (
-            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,rgba(52,211,153,0.1)_60deg,transparent_120deg)] animate-[spin_4s_linear_infinite]" />
-          )}
-
-          {/* 雷达内部虚线圈装饰 */}
-          <div className="absolute top-[15%] left-[15%] right-[15%] bottom-[15%] border border-dashed border-brand-cyan-900/50 rounded-full animate-[spin_30s_linear_infinite]" />
-          <div className="absolute top-[35%] left-[35%] right-[35%] bottom-[35%] border border-brand-emerald-900/30 rounded-full animate-[spin_20s_linear_infinite_reverse]" />
-
-          {/* 声呐扫描波纹 (探测阶段 phase 1 ~ 3) */}
-          {phase >= 1 && phase < 4 && phase !== -2 && (
-            <>
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[20%] h-[20%] rounded-full border border-brand-cyan-400/40 animate-[ping_4s_ease-out_infinite]"
-                style={{ animationDelay: "0s" }}
-              />
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] rounded-full border border-brand-cyan-400/20 animate-[ping_4s_ease-out_infinite]"
-                style={{ animationDelay: "1.3s" }}
-              />
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] rounded-full border border-brand-cyan-400/10 animate-[ping_4s_ease-out_infinite]"
-                style={{ animationDelay: "2.6s" }}
-              />
-            </>
-          )}
-
-          {/* 领航员节点 (Core Node) - 通过 transform 反向倾斜使其垂直于雷达面立起来！ */}
-          <div
-            className="absolute flex flex-col items-center transition-all duration-1000 ease-in-out z-30"
-            style={{
-              top: `${corePos.top}%`,
-              left: `${corePos.left}%`,
-              transform: "translate(-50%, -50%) rotateX(-65deg)",
-            }}
-          >
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 relative overflow-hidden
-              ${
-                phase === 2 || phase === 3
-                  ? "shadow-[0_0_20px_rgba(244,63,94,0.6)]"
-                  : phase === -1 || phase === -2
-                    ? "shadow-[0_0_30px_rgba(14,165,233,0.8)] scale-110"
-                    : "shadow-[0_0_20px_rgba(6,182,212,0.6)]"
-              }
-              ${phase >= 5 ? "shadow-[0_0_40px_rgba(52,211,153,1)] scale-125 animate-pulse" : ""}
-            `}
-              style={{
-                background:
-                  phase === 2 || phase === 3
-                    ? "radial-gradient(circle at 30% 30%, #f43f5e, #be123c, #4c0519)"
-                    : phase >= 5
-                      ? "radial-gradient(circle at 30% 30%, #34d399, #059669, #064e3b)"
-                      : phase === -1 || phase === -2
-                        ? "radial-gradient(circle at 30% 30%, #38bdf8, #0ea5e9, #0369a1)"
-                        : "radial-gradient(circle at 30% 30%, #06b6d4, #0891b2, #164e63)",
-                boxShadow:
-                  "inset -4px -4px 8px rgba(0,0,0,0.6), inset 2px 2px 6px rgba(255,255,255,0.4)",
-              }}
-            >
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 mix-blend-overlay" />
-              <span className="w-2 h-2 rounded-full bg-white opacity-90 drop-shadow-[0_0_5px_rgba(255,255,255,1)] z-10" />
-            </div>
-
-            <span
-              className={`text-xs mt-3 px-2 py-0.5 whitespace-nowrap bg-brand-slate-900/80 rounded-sm font-bold tracking-widest border transition-all duration-500
-              ${phase === 2 || phase === 3 ? "text-brand-rose-400 border-brand-rose-900/50" : "text-brand-cyan-400 border-brand-cyan-900/50"}
-              ${phase >= 5 ? "text-brand-emerald-400 border-brand-emerald-400/50 opacity-100" : ""}
-              ${phase === -1 || phase === -2 ? "text-sky-400 border-sky-400/50" : ""}`}
-            >
-              [ 本我 ]
-            </span>
-          </div>
-
-          {/* 周边全网候选行星群 */}
-          {candidates.map((c) => (
-            <React.Fragment key={c.id}>
-              {/* 平躺在雷达盘上的目标锁定扩散光圈 (取代原本的连线) */}
-              {c.isTarget && phase >= 4 && (
-                <div
-                  className="absolute rounded-full border-[2px] transition-all duration-[2000ms] ease-out z-10"
-                  style={{
-                    top: c.top,
-                    left: c.left,
-                    width: phase >= 5 ? "800px" : "40px",
-                    height: phase >= 5 ? "800px" : "40px",
-                    transform: "translate(-50%, -50%)",
-                    borderColor: "rgba(52,211,153,0.5)",
-                    boxShadow:
-                      phase >= 5
-                        ? "0 0 100px rgba(52,211,153,0.3) inset, 0 0 50px rgba(52,211,153,0.4)"
-                        : "0 0 10px rgba(52,211,153,0.5) inset",
-                    opacity: phase >= 5 ? 1 : 0.8,
-                  }}
-                />
-              )}
-
-              <div
-                className={`absolute flex flex-col items-center justify-center transition-all duration-[1500ms] ease-in-out z-20 ${c.extraClass}`}
-                style={{
-                  top: c.top,
-                  left: c.left,
-                  opacity: c.opacity,
-                  transform: `translate(-50%, -50%) rotateX(-65deg) scale(${c.scale})`,
-                }}
-              >
-                <div className="relative flex items-center justify-center">
-                  {/* 0. 坚硬的 3D 岩石星体 */}
-                  {c.starType === 0 && (
-                    <div
-                      className={`w-6 h-6 rounded-full ${c.shadowClass}`}
-                      style={{
-                        background: c.bgClass.includes("emerald")
-                          ? "radial-gradient(circle at 30% 30%, #34d399, #065f46)"
-                          : c.bgClass.includes("rose")
-                            ? "radial-gradient(circle at 30% 30%, #fb7185, #9f1239)"
-                            : "radial-gradient(circle at 30% 30%, #cbd5e1, #334155)",
-                        boxShadow:
-                          "inset -3px -3px 6px rgba(0,0,0,0.8), inset 1px 1px 3px rgba(255,255,255,0.5)",
-                      }}
-                    >
-                      {/* 表面斑驳的陨石坑假象 */}
-                      <div className="absolute top-[20%] left-[20%] w-1.5 h-1.5 rounded-full bg-black/30 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.5)]" />
-                      <div className="absolute top-[60%] right-[30%] w-2 h-2 rounded-full bg-black/20 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.5)]" />
-                    </div>
-                  )}
-                  {/* 1. 立体带星环的气态巨行星 (类似土星) */}
-                  {c.starType === 1 && (
-                    <div className="relative flex items-center justify-center w-10 h-10">
-                      <div
-                        className={`absolute w-5 h-5 rounded-full z-10 ${c.shadowClass}`}
-                        style={{
-                          background: c.bgClass.includes("emerald")
-                            ? "radial-gradient(circle at 30% 30%, #10b981, #064e3b)"
-                            : c.bgClass.includes("rose")
-                              ? "radial-gradient(circle at 30% 30%, #f43f5e, #881337)"
-                              : "radial-gradient(circle at 30% 30%, #94a3b8, #1e293b)",
-                          boxShadow:
-                            "inset -2px -2px 5px rgba(0,0,0,0.7), inset 1px 1px 4px rgba(255,255,255,0.4)",
-                        }}
-                      >
-                        {/* 气态纹理线 */}
-                        <div className="absolute top-1/4 left-0 right-0 h-[2px] bg-white/10 rotate-[-15deg]" />
-                        <div className="absolute top-1/2 left-0 right-0 h-[3px] bg-black/10 rotate-[-15deg]" />
-                      </div>
-                      {/* 3D 星环 */}
-                      <div
-                        className={`absolute w-10 h-10 rounded-full border-[1.5px] border-t-4 animate-[spin_6s_linear_infinite] opacity-60 ${c.bgClass.replace("bg-", "border-").split("/")[0]}`}
-                        style={{ transform: "rotateX(70deg) rotateY(10deg)" }}
-                      />
-                    </div>
-                  )}
-                  {/* 2. 具有晕影深邃的暗物质星云 */}
-                  {c.starType === 2 && (
-                    <div
-                      className={`w-8 h-8 rounded-full blur-[3px] opacity-80 ${c.shadowClass}`}
-                      style={{
-                        background: c.bgClass.includes("emerald")
-                          ? "radial-gradient(circle, #34d399 20%, transparent 80%)"
-                          : c.bgClass.includes("rose")
-                            ? "radial-gradient(circle, #fb7185 20%, transparent 80%)"
-                            : "radial-gradient(circle, #94a3b8 20%, transparent 80%)",
-                      }}
-                    />
-                  )}
-                  {/* 3. 旋绕双星引力系统 */}
-                  {c.starType === 3 && (
-                    <div className="relative w-8 h-8 animate-[spin_2s_linear_infinite]">
-                      <div
-                        className={`absolute top-0 right-0 w-3 h-3 rounded-full ${c.shadowClass}`}
-                        style={{
-                          background: c.bgClass.includes("emerald")
-                            ? "radial-gradient(circle at 30% 30%, #34d399, #022c22)"
-                            : "radial-gradient(circle at 30% 30%, #cbd5e1, #0f172a)",
-                          boxShadow: "inset -1px -1px 3px rgba(0,0,0,0.8)",
-                        }}
-                      />
-                      <div
-                        className={`absolute bottom-0 left-0 w-4 h-4 rounded-full ${c.shadowClass}`}
-                        style={{
-                          background: c.bgClass.includes("rose")
-                            ? "radial-gradient(circle at 30% 30%, #fb7185, #4c0519)"
-                            : "radial-gradient(circle at 30% 30%, #64748b, #020617)",
-                          boxShadow: "inset -2px -2px 4px rgba(0,0,0,0.8)",
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* 仅为 Target 显示文字标签 */}
-                {c.isTarget && phase >= 4 && (
-                  <div className="mt-3 text-[10px] text-brand-emerald-400 font-bold tracking-widest bg-brand-slate-900/80 px-2 py-0.5 rounded-sm whitespace-nowrap animate-in fade-in duration-1000 border border-brand-emerald-900/50 shadow-md">
-                    {useAgentStore.getState().bestMatchUser?.username ||
-                      "异星灵魂"}
-                  </div>
-                )}
-
-                {/* 游离意识碎片闪烁 (未排斥前) */}
-                {phase >= 1 &&
-                  phase <= 3 &&
-                  !c.isMis1 &&
-                  !c.isMis2 &&
-                  !c.isTarget && (
-                    <div
-                      className="absolute top-10 whitespace-nowrap text-[9px] text-brand-cyan-300/80 tracking-widest font-mono border border-brand-cyan-900/50 bg-brand-slate-950/70 px-1.5 py-0.5 rounded-sm animate-[pulse_3s_ease-in-out_infinite]"
-                      style={{ animationDelay: `${(c.id % 4) * 0.8}s` }}
-                    >
-                      {c.snippet}
-                    </div>
-                  )}
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
 
       {/* 半透明玻璃态控制台 */}
-      <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[480px] lg:w-[600px] z-30 pointer-events-none">
-        <div className="bg-brand-slate-950/70 border border-brand-cyan-900/40 p-5 h-[35vh] sm:h-[40vh] overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.8)] font-mono text-xs sm:text-sm md:text-base flex flex-col justify-end space-y-2.5 backdrop-blur-md rounded-sm">
+      <div className="absolute bottom-3 right-4 sm:right-5 sm:bottom-5 sm:w-[300px] lg:w-[360px] z-30 pointer-events-none">
+        <div className="bg-brand-slate-950/70 border border-brand-cyan-900/40 p-3 h-[22vh] overflow-y-auto shadow-[0_10px_40px_rgba(0,0,0,0.8)] font-mono text-xs flex flex-col justify-end space-y-1.5 backdrop-blur-md rounded-sm">
           {logs.map((log, index) => (
             <div
               key={index}
