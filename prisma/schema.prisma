@@ -64,3 +64,14 @@ model ScenarioTip {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// 知识库清理日志
+model KnowledgeCleanupLog {
+  id               String   @id @default(cuid())
+  category         String
+  deletedCount     Int
+  insertedCount    Int
+  deletedCardIds   String[] // 记录被删除的老卡片 cardId
+  insertedCardIds  String[] // 记录合并后生成的新卡片 cardId
+  executedAt       DateTime @default(now())
+}
