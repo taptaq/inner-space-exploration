@@ -1,66 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import axios from "axios";
-import crypto from "crypto";
+const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
+const crypto = require('crypto');
+const prisma = new PrismaClient();
 
-// Vercel Pro/Hobby 支持的最长超时放宽配置 (需框架支持 Node.js 扩展时长)
-export const maxDuration = 60;
+async function main() {
+  const allCards = await prisma.knowledgeCard.findMany({
+    orderBy: { createdAt: "desc" },
+  });
 
-// 强行跳过证书检验
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  const groupedCards = allCards.reduce((acc, card) => {
+    acc[card.category] = acc[card.category] || [];
+    acc[card.category].push(card);
+    return acc;
+  }, {});
 
-export async function GET(req: NextRequest) {
-  try {
-    const authHeader = req.headers.get("authorization");
-    const cronSecret = process.env.CRON_SECRET;
+  const apiKey = process.env.MINIMAX_API_KEY;
+  const model = process.env.MINIMAX_MODEL || "MiniMax-M2.5-highspeed";
 
-    // 如果环境变量里配置了 CRON_SECRET（Vercel标准做法），则必须校验 Token
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  let totalDeleted = 0;
+  let totalInserted = 0;
 
-    // 1. 获取所有医典卡片
-    const allCards = await prisma.knowledgeCard.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+  for (const category of Object.keys(groupedCards)) {
+    const cardsInCategory = groupedCards[category];
+    if (cardsInCategory.length < 5) continue;
 
-    if (allCards.length < 10) {
-      return NextResponse.json({
-        message: "未达到合并需要的最小数量阈值 (10)，暂无需清理。",
-      });
-    }
+    console.log(`\n=== Processing [${category}] - ${cardsInCategory.length} cards ===`);
 
-    // 2. 按分类分组 (例如 psychology, safety)
-    const groupedCards = allCards.reduce((acc: Record<string, any[]>, card) => {
-      acc[card.category] = acc[card.category] || [];
-      acc[card.category].push(card);
-      return acc;
-    }, {});
-
-    const apiKey = process.env.MINIMAX_API_KEY;
-    const model = process.env.MINIMAX_MODEL || "MiniMax-M2.5-highspeed";
-
-    if (!apiKey || apiKey === "your_key_here") {
-      throw new Error("Minimax API Key 未配置");
-    }
-
-    let totalDeleted = 0;
-    let totalInserted = 0;
-
-    // 3. 逐个分类交给大模型进行去重和浓缩
-    for (const category of Object.keys(groupedCards)) {
-      const cardsInCategory = groupedCards[category];
-
-      // 仅当某一类别的卡片数量比较多时，才需要清洗 (阈值设为 5)
-      if (cardsInCategory.length < 5) continue;
-
-      // 为防止单次 Prompt 携带字数过多导致 token 超限或超时，将卡片分块（例如每批 20 张）
-      const chunkSize = 20;
-      for (let i = 0; i < cardsInCategory.length; i += chunkSize) {
-        const chunk = cardsInCategory.slice(i, i + chunkSize);
-        
-        // 如果当前块太少，跳过
-        if (chunk.length < 3) continue;
+    const chunkSize = 20;
+    for (let i = 0; i < cardsInCategory.length; i += chunkSize) {
+      const chunk = cardsInCategory.slice(i, i + chunkSize);
+      
+      if (chunk.length < 3) continue;
 
       const systemPrompt = `你现在是一位星舰"深空医典档案馆"的首席数据压缩专家与心理馆长。
 你的任务是对随着用户递增而产生的大量相似冗余的医疗/心理卡片进行梳理合并、去重提炼。
@@ -71,7 +41,7 @@ export async function GET(req: NextRequest) {
 若输入 10-20 张卡片，你需要将其压缩成 3-5 张最核心、最普适的归纳档案卡。必须实现数量的大幅缩减！
 
 【最高安全指令：保留科幻严谨感与通俗比喻】
-务必保留原卡片中接地气的大白话和精妙的生活化比喻（如将防线比作龟壳、将深寒拟化为恒温舱等），保持温暖、科学、不晦涩的口吻。
+务必保留原卡片中接地气的大白话和精妙的生活化比喻，保持温暖、科学、不晦涩的口吻。
 
 【极其重要的 JSON 格式要求】：
 绝不能在任何内容字段中使用英文双引号（"）以免破坏结构！如需引用，一律使用全角中文双/单引号（「」或『』）。
@@ -97,7 +67,7 @@ export async function GET(req: NextRequest) {
           {
             role: "user",
             content: `请合并并精华提炼以下深空医典词条数据（共 ${chunk.length} 张）：\n${JSON.stringify(
-              chunk.map((c: any) => ({
+              chunk.map((c) => ({
                 title: c.title,
                 summary: c.summary,
                 detail: c.detail,
@@ -109,11 +79,12 @@ export async function GET(req: NextRequest) {
           },
         ],
         max_tokens: 4000,
-        temperature: 0.2, // 调低创造性，集中在精准的文本归纳上
+        temperature: 0.2,
         top_p: 0.95,
       };
 
       try {
+        console.log(`Sending chunk ${Math.floor(i/chunkSize)+1} size: ${chunk.length}...`);
         const minimaxRes = await axios.post(
           "https://api.minimax.io/v1/text/chatcompletion_v2",
           requestData,
@@ -122,7 +93,7 @@ export async function GET(req: NextRequest) {
               "Content-Type": "application/json",
               Authorization: `Bearer ${apiKey}`,
             },
-            timeout: 55000, // 给大模型合并时间更充裕
+            timeout: 55000,
           }
         );
 
@@ -136,11 +107,10 @@ export async function GET(req: NextRequest) {
         }
 
         const content = data.choices?.[0]?.message?.content || "[]";
-        let parsedCards: any[] = [];
+        let parsedCards = [];
 
         try {
-          const jsonMatch =
-            content.match(/\[[\s\S]*\]/) || content.match(/\{[\s\S]*\}/);
+          const jsonMatch = content.match(/\[[\s\S]*\]/) || content.match(/\{[\s\S]*\}/);
           let jsonStr = jsonMatch ? jsonMatch[0] : content;
           jsonStr = jsonStr.replace(/```json/gi, "").replace(/```/g, "").trim();
           parsedCards = JSON.parse(jsonStr);
@@ -149,13 +119,12 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        // 仅当 AI 合金成功输出结构，并且产生了明显的数量缩减（数量变少）时，再执行替换
         if (
           Array.isArray(parsedCards) &&
           parsedCards.length > 0 &&
           parsedCards.length < chunk.length
         ) {
-          const oldIds = chunk.map((c: any) => c.id);
+          const oldIds = chunk.map((c) => c.id);
 
           const newCardsToInsert = parsedCards.map((card) => {
             const suffix = crypto.randomBytes(2).toString("hex");
@@ -173,7 +142,6 @@ export async function GET(req: NextRequest) {
             };
           });
 
-          // 执行事务：从原始表中删掉旧卡，塞入新出炉的高质量合并卡，并打入清理日志
           await prisma.$transaction([
             prisma.knowledgeCard.deleteMany({
               where: { id: { in: oldIds } },
@@ -187,7 +155,7 @@ export async function GET(req: NextRequest) {
                 category: category,
                 deletedCount: oldIds.length,
                 insertedCount: newCardsToInsert.length,
-                deletedCardIds: chunk.map((c: any) => c.cardId),
+                deletedCardIds: chunk.map((c) => c.cardId),
                 insertedCardIds: newCardsToInsert.map(c => c.cardId),
               }
             })
@@ -196,32 +164,23 @@ export async function GET(req: NextRequest) {
           totalDeleted += oldIds.length;
           totalInserted += newCardsToInsert.length;
           console.log(
-            `[Knowledge Cleanup Success] Category: ${category} | Deleted: ${oldIds.length} -> Inserted: ${newCardsToInsert.length}`
+            `[Success] ${category} chunk | Deleted: ${oldIds.length} -> Inserted: ${newCardsToInsert.length}`
           );
         } else {
-           console.log(`[Knowledge Cleanup Skipped] Category: ${category} | Origin: ${chunk.length}, Parsed: ${parsedCards.length}. Threshold unsatisfied or no compression achieved.`);
+           console.log(`[Skipped] ${category} chunk | Origin: ${chunk.length}, Parsed: ${parsedCards?parsedCards.length:0}. Threshold unsatisfied or no compression achieved.`);
         }
       } catch (err) {
-        console.error(`Category ${category} cleanup chunk prompt fail:`, err);
+        if(err.response) {
+            console.error(`[Error] HTTP ${err.response.status}: ${JSON.stringify(err.response.data)}`);
+        } else {
+            console.error(`[Error] ${err.message}`);
+        }
       }
-      } // end inner chunk loop
-    } // end category loop
-
-    return NextResponse.json({
-      success: true,
-      message: "Knowledge cards scheduled cleanup executed via Deep Space Archivist AI.",
-      stats: {
-        totalProcessedCategories: Object.keys(groupedCards).length,
-        totalDeleted,
-        totalInserted,
-        netReduction: totalDeleted - totalInserted,
-      },
-    });
-  } catch (error: any) {
-    console.error("Cron knowledge-cleanup root error:", error);
-    return NextResponse.json(
-      { error: `Cron execution failed: ${error?.message || String(error)}` },
-      { status: 500 }
-    );
+    } 
   }
+
+  console.log(`\n=== DONE ===`);
+  console.log(`Total Deleted: ${totalDeleted}, Total Inserted: ${totalInserted}`);
 }
+
+main().finally(() => prisma.$disconnect());
